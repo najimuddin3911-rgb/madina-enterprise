@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>বালু হিসাব খাতা</title>
+<title>মদিনা এন্টারপ্রাইজ - হিসাব খাতা</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -100,6 +100,8 @@
   .typeToggle button.on.buy{border-color:var(--river); color:var(--river); background:var(--river-soft);}
   .typeToggle button.on.sell{border-color:var(--gold-deep); color:var(--gold-deep); background:var(--gold-soft);}
   .typeToggle button.on.expense{border-color:var(--rust); color:var(--rust); background:var(--rust-soft);}
+  .typeToggle button.on.duein{border-color:#2E7D46; color:#2E7D46; background:#E4F3E8;}
+  .typeToggle button.on.dueout{border-color:#8A5A2B; color:#8A5A2B; background:#F3E7D6;}
   .btn{
     display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:none; border-radius:9px;
     padding:10px 18px; font-family:'Hind Siliguri',sans-serif; font-weight:700; font-size:14px;
@@ -122,6 +124,8 @@
   .badge.buy{background:var(--river-soft); color:var(--river);}
   .badge.sell{background:var(--gold-soft); color:var(--gold-deep);}
   .badge.expense{background:var(--rust-soft); color:var(--rust);}
+  .badge.due-in{background:#E4F3E8; color:#2E7D46;}
+  .badge.due-out{background:#F3E7D6; color:#8A5A2B;}
   .tableWrap{overflow-x:auto; margin-top:14px;}
   .filterBar{display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:6px;}
   .filterBar > div{min-width:130px;}
@@ -172,7 +176,7 @@
     <div class="brand">
       <div class="brand-mark"></div>
       <div>
-        <h1>বালু হিসাব খাতা</h1>
+        <h1 id="brandName">মদিনা এন্টারপ্রাইজ</h1>
         <p id="brandSub">ক্রয় • বিক্রয় • খরচ • লাভ-ক্ষতি</p>
       </div>
     </div>
@@ -224,22 +228,24 @@
     <h2 class="section-title" id="entryTitle">নতুন এন্ট্রি যুক্ত করুন</h2>
     <div class="card">
       <div class="typeToggle">
-        <button type="button" class="buy" data-type="buy">🚛 বালু ক্রয়</button>
-        <button type="button" class="sell" data-type="sell">💰 বালু বিক্রয়</button>
+        <button type="button" class="buy" data-type="buy">🚛 ক্রয়</button>
+        <button type="button" class="sell" data-type="sell">💰 বিক্রয়</button>
         <button type="button" class="expense" data-type="expense">🧾 খরচ</button>
+        <button type="button" class="duein" data-type="due-in">✔ বাকি আদায়</button>
+        <button type="button" class="dueout" data-type="due-out">✔ বাকি পরিশোধ</button>
       </div>
       <form id="entryForm">
         <input type="hidden" id="f-id">
         <div class="formGrid">
           <div><label>তারিখ *</label><input type="date" id="f-date" required></div>
-          <div class="fld-tx"><label>চালান নং</label><input type="text" id="f-invoice" placeholder="যেমনঃ ১১৪৪৯"></div>
-          <div class="fld-tx"><label>গাড়ির নং</label><input type="text" id="f-vehicle" placeholder="যেমনঃ ১২.২৭"></div>
-          <div class="fld-tx" id="fld-customer-wrap"><label id="lbl-customer">কাস্টমার / সাপ্লায়ারের নাম</label><input type="text" id="f-customer" placeholder="নাম লিখুন"></div>
-          <div><label id="lbl-item">মালামাল / বিবরণ</label><input type="text" id="f-item" placeholder="যেমনঃ ২০ এমএম / এল.সি"></div>
-          <div class="fld-tx"><label>ফুট</label><input type="number" step="0.01" id="f-feet" placeholder="০.০০"></div>
-          <div class="fld-tx"><label>দর (প্রতি ফুট)</label><input type="number" step="0.01" id="f-rate" placeholder="০.০০"></div>
-          <div><label>টাকা (মোট) *</label><input type="number" step="0.01" id="f-amount" required placeholder="০.০০"></div>
-          <div class="fld-tx"><label id="lbl-paid">জমা</label><input type="number" step="0.01" id="f-paid" value="0"></div>
+          <div class="fld-goods"><label>চালান নং</label><input type="text" id="f-invoice" placeholder="যেমনঃ ১১৪৪৯"></div>
+          <div class="fld-goods"><label>গাড়ির নং</label><input type="text" id="f-vehicle" placeholder="যেমনঃ ১২.২৭"></div>
+          <div class="fld-party" id="fld-customer-wrap"><label id="lbl-customer">কাস্টমার / সাপ্লায়ারের নাম</label><input type="text" id="f-customer" placeholder="নাম লিখুন"></div>
+          <div class="fld-item"><label id="lbl-item">মালামাল / বিবরণ</label><input type="text" id="f-item" placeholder="যেমনঃ ২০ এমএম / এল.সি"></div>
+          <div class="fld-goods"><label>ফুট</label><input type="number" step="0.01" id="f-feet" placeholder="০.০০"></div>
+          <div class="fld-goods"><label>দর (প্রতি ফুট)</label><input type="number" step="0.01" id="f-rate" placeholder="০.০০"></div>
+          <div><label id="lbl-amount">টাকা (মোট) *</label><input type="number" step="0.01" id="f-amount" required placeholder="০.০০"></div>
+          <div class="fld-paid"><label id="lbl-paid">জমা</label><input type="number" step="0.01" id="f-paid" value="0"></div>
           <div><label>বাকি</label><input type="number" step="0.01" id="f-due" readonly style="background:var(--sand-bg-alt); font-weight:700;"></div>
           <div style="grid-column:1/-1;"><label>নোট (ঐচ্ছিক)</label><input type="text" id="f-note" placeholder="অতিরিক্ত তথ্য থাকলে লিখুন"></div>
         </div>
@@ -260,6 +266,7 @@
         <button data-t="buy">শুধু ক্রয়ের হিসাব</button>
         <button data-t="sell">শুধু বিক্রয়ের হিসাব</button>
         <button data-t="expense">শুধু খরচের হিসাব</button>
+        <button data-t="settle">✔ শুধু বাকি আদায়/পরিশোধ</button>
       </div>
       <div class="filterBar">
         <div>
@@ -269,6 +276,9 @@
             <option value="buy">ক্রয়</option>
             <option value="sell">বিক্রয়</option>
             <option value="expense">খরচ</option>
+            <option value="due-in">বাকি আদায়</option>
+            <option value="due-out">বাকি পরিশোধ</option>
+            <option value="settle">বাকি আদায় + পরিশোধ (উভয়)</option>
           </select>
         </div>
         <div style="min-width:180px;"><label>নাম দিয়ে খুঁজুন</label><input type="text" id="filt-q" placeholder="কাস্টমার/সাপ্লায়ারের নাম"></div>
@@ -309,6 +319,15 @@
         <button data-p="custom">কাস্টম রেঞ্জ</button>
       </div>
       <div class="filterBar">
+        <div><label>ধরন</label>
+          <select id="rep-type">
+            <option value="all">সব (ক্রয় + বিক্রয় + খরচ)</option>
+            <option value="buy">শুধু ক্রয়ের হিসাব</option>
+            <option value="sell">শুধু বিক্রয়ের হিসাব</option>
+            <option value="expense">শুধু খরচের হিসাব</option>
+            <option value="settle">শুধু বাকি আদায়/পরিশোধ</option>
+          </select>
+        </div>
         <div><label>শুরুর তারিখ</label><input type="date" id="rep-from"></div>
         <div><label>শেষ তারিখ</label><input type="date" id="rep-to"></div>
         <div><button class="btn btn-primary" onclick="app.buildReport()">রিপোর্ট তৈরি করুন</button></div>
@@ -383,6 +402,7 @@ const app = {
     document.querySelectorAll('#presetRow button').forEach(b=>{
       b.addEventListener('click', ()=>app.applyPreset(b.dataset.p));
     });
+    document.getElementById('rep-type').addEventListener('change', app.buildReport);
 
     await app.loadData();
     app.setEntryType('buy');
@@ -408,7 +428,7 @@ const app = {
     document.getElementById('s-name').value = app.state.settings.name || '';
     document.getElementById('s-phone').value = app.state.settings.phone || '';
     document.getElementById('s-address').value = app.state.settings.address || '';
-    document.getElementById('brandSub').textContent = app.state.settings.name;
+    document.getElementById('brandName').textContent = app.state.settings.name || 'মদিনা এন্টারপ্রাইজ';
   },
   async saveRecords(){
     try{ await window.storage.set('balu_records_v1', JSON.stringify(app.state.records), false); }
@@ -422,7 +442,7 @@ const app = {
     };
     try{
       await window.storage.set('balu_settings_v1', JSON.stringify(app.state.settings), false);
-      if(app.state.settings.name) document.getElementById('brandSub').textContent = app.state.settings.name;
+      document.getElementById('brandName').textContent = app.state.settings.name || 'মদিনা এন্টারপ্রাইজ';
       app.toast('তথ্য সংরক্ষণ হয়েছে');
     }catch(e){ app.toast('সংরক্ষণে সমস্যা হয়েছে'); }
   },
@@ -436,7 +456,14 @@ const app = {
     const [y,m,d] = iso.split('-');
     return d+'-'+m+'-'+y;
   },
-  typeLabel(t){ return t==='buy'?'ক্রয়':(t==='sell'?'বিক্রয়':'খরচ'); },
+  typeLabel(t){
+    if(t==='buy') return 'ক্রয়';
+    if(t==='sell') return 'বিক্রয়';
+    if(t==='expense') return 'খরচ';
+    if(t==='due-in') return '✔ বাকি আদায়';
+    if(t==='due-out') return '✔ বাকি পরিশোধ';
+    return t;
+  },
   toast(msg){
     const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
     clearTimeout(app._toastTimer); app._toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
@@ -459,13 +486,22 @@ const app = {
     document.querySelectorAll('.typeToggle button').forEach(b=>{
       b.classList.toggle('on', b.dataset.type===type);
     });
-    const showTx = type!=='expense';
-    document.querySelectorAll('.fld-tx').forEach(el=>el.style.display = showTx ? 'block':'none');
-    document.getElementById('lbl-customer').textContent = type==='buy' ? 'সাপ্লায়ারের নাম' : 'কাস্টমারের নাম';
-    document.getElementById('lbl-item').textContent = type==='expense' ? 'খরচের বিবরণ' : 'মালামাল';
+    const isSettle = (type==='due-in' || type==='due-out');
+    const showGoods = (type==='buy' || type==='sell');
+    const showParty = !(type==='expense');
+    const showPaid = !isSettle;
+    document.querySelectorAll('.fld-goods').forEach(el=>el.style.display = showGoods ? 'block':'none');
+    document.querySelectorAll('.fld-party').forEach(el=>el.style.display = showParty ? 'block':'none');
+    document.querySelectorAll('.fld-paid').forEach(el=>el.style.display = showPaid ? 'block':'none');
+    document.getElementById('lbl-customer').textContent = (type==='buy') ? 'সাপ্লায়ারের নাম' : (type==='due-out' ? 'সাপ্লায়ারের নাম' : 'কাস্টমারের নাম');
+    document.getElementById('lbl-item').textContent = type==='expense' ? 'খরচের বিবরণ' : (isSettle ? 'বিবরণ (ঐচ্ছিক)' : 'মালামাল');
     document.getElementById('lbl-paid').textContent = type==='buy' ? 'জমা (সাপ্লায়ারকে দেওয়া)' : 'জমা (কাস্টমার থেকে পাওয়া)';
+    document.getElementById('lbl-amount').textContent = isSettle ? (type==='due-in' ? 'আদায়কৃত টাকা *' : 'পরিশোধকৃত টাকা *') : 'টাকা (মোট) *';
     if(type==='expense'){
       document.getElementById('f-paid').value = document.getElementById('f-amount').value || 0;
+      app.autoCalcDue();
+    }
+    if(isSettle){
       app.autoCalcDue();
     }
   },
@@ -479,7 +515,8 @@ const app = {
   },
   autoCalcDue(){
     const amount = parseFloat(document.getElementById('f-amount').value)||0;
-    const paid = parseFloat(document.getElementById('f-paid').value)||0;
+    const isSettle = (app.state.entryType==='due-in' || app.state.entryType==='due-out');
+    const paid = isSettle ? amount : (parseFloat(document.getElementById('f-paid').value)||0);
     document.getElementById('f-due').value = (amount-paid).toFixed(2);
   },
   resetForm(){
@@ -496,7 +533,8 @@ const app = {
     e.preventDefault();
     const id = document.getElementById('f-id').value || app.uid();
     const amount = parseFloat(document.getElementById('f-amount').value)||0;
-    const paid = parseFloat(document.getElementById('f-paid').value)||0;
+    const isSettle = (app.state.entryType==='due-in' || app.state.entryType==='due-out');
+    const paid = isSettle ? amount : (parseFloat(document.getElementById('f-paid').value)||0);
     const rec = {
       id,
       type: app.state.entryType,
@@ -558,7 +596,11 @@ const app = {
       if(r.type==='buy'){ s.buy+=r.amount; s.paidOut+=r.paid; s.duePayable+=Math.max(r.due,0); s.feetBought+=r.feet||0; }
       else if(r.type==='sell'){ s.sell+=r.amount; s.paidIn+=r.paid; s.dueReceivable+=Math.max(r.due,0); s.feetSold+=r.feet||0; }
       else if(r.type==='expense'){ s.expense+=r.amount; }
+      else if(r.type==='due-in'){ s.paidIn+=r.amount; s.dueReceivable-=r.amount; }
+      else if(r.type==='due-out'){ s.paidOut+=r.amount; s.duePayable-=r.amount; }
     });
+    if(s.dueReceivable<0) s.dueReceivable=0;
+    if(s.duePayable<0) s.duePayable=0;
     s.profit = s.sell - s.buy - s.expense;
     s.stock = s.feetBought - s.feetSold;
     return s;
@@ -627,7 +669,8 @@ const app = {
     };
     const f = app.state.txFilter;
     let list = app.state.records.filter(r=>{
-      if(f.type!=='all' && r.type!==f.type) return false;
+      if(f.type==='settle'){ if(!(r.type==='due-in'||r.type==='due-out')) return false; }
+      else if(f.type!=='all' && r.type!==f.type) return false;
       if(f.q && !(r.customer||'').toLowerCase().includes(f.q)) return false;
       if(f.from && r.date < f.from) return false;
       if(f.to && r.date > f.to) return false;
@@ -655,14 +698,16 @@ const app = {
   printCurrentTxFilter(){
     const f = app.state.txFilter;
     let list = app.state.records.filter(r=>{
-      if(f.type!=='all' && r.type!==f.type) return false;
+      if(f.type==='settle'){ if(!(r.type==='due-in'||r.type==='due-out')) return false; }
+      else if(f.type!=='all' && r.type!==f.type) return false;
       if(f.q && !(r.customer||'').toLowerCase().includes(f.q)) return false;
       if(f.from && r.date < f.from) return false;
       if(f.to && r.date > f.to) return false;
       return true;
     }).sort((a,b)=>a.date.localeCompare(b.date));
     if(list.length===0){ app.toast('তালিকা খালি, ইনভয়েস তৈরি করা যাচ্ছে না'); return; }
-    let label = f.type==='all' ? 'সকল লেনদেনের হিসাব' : (f.type==='buy' ? 'ক্রয়ের হিসাব' : (f.type==='sell' ? 'বিক্রয়ের হিসাব' : 'খরচের হিসাব'));
+    const typeLabels = {all:'সকল লেনদেনের হিসাব', buy:'ক্রয়ের হিসাব', sell:'বিক্রয়ের হিসাব', expense:'খরচের হিসাব', 'due-in':'বাকি আদায়ের হিসাব', 'due-out':'বাকি পরিশোধের হিসাব', settle:'বাকি আদায়/পরিশোধের হিসাব'};
+    let label = typeLabels[f.type] || 'সকল লেনদেনের হিসাব';
     if(f.q) label += ' — নাম: ' + document.getElementById('filt-q').value.trim();
     if(f.from || f.to) label += ' (' + (f.from?app.fmtDateDisplay(f.from):'শুরু থেকে') + ' — ' + (f.to?app.fmtDateDisplay(f.to):'এখন পর্যন্ত') + ')';
     app.renderInvoiceDoc(list, label, true);
@@ -694,7 +739,9 @@ const app = {
           <div class="muted" style="margin-top:6px; font-size:12.5px;">লেনদেন: ${groups[n].length} টি</div>
           <div class="flexRow" style="margin-top:8px;">
             <span class="muted" style="font-size:12.5px;">মোট বাকি</span>
-            <span class="num" style="font-weight:700; color:${due>0?'var(--rust)':'var(--river)'};">৳${app.fmtMoney(due)}</span>
+            ${due>0
+              ? `<span class="num" style="font-weight:700; color:var(--rust);">৳${app.fmtMoney(due)}</span>`
+              : `<span style="font-weight:700; color:#2E7D46;">✔ পরিশোধ সম্পন্ন</span>`}
           </div>
         </div>`;
       }).join('') + `</div>`;
@@ -719,6 +766,7 @@ const app = {
       return;
     }
     const s = app.summarize(list);
+    const totalDue = s.dueReceivable + s.duePayable;
     box.innerHTML = `
       <div class="flexRow noPrint" style="margin-bottom:10px;">
         <button class="btn btn-ghost btn-sm" onclick="app.clearCustomerSearch()">← সকল কাস্টমার তালিকায় ফিরুন</button>
@@ -728,7 +776,11 @@ const app = {
         <div class="card stat river"><div class="lbl">মোট ক্রয় (তার কাছ থেকে)</div><div class="val num">৳${app.fmtMoney(s.buy)}</div></div>
         <div class="card stat gold"><div class="lbl">মোট বিক্রয় (তার কাছে)</div><div class="val num">৳${app.fmtMoney(s.sell)}</div></div>
         <div class="card stat ink"><div class="lbl">মোট জমা</div><div class="val num">৳${app.fmtMoney(s.paidIn+s.paidOut)}</div></div>
-        <div class="card stat rust"><div class="lbl">মোট বাকি</div><div class="val num">৳${app.fmtMoney(s.dueReceivable+s.duePayable)}</div></div>
+        <div class="card stat rust"><div class="lbl">মোট বাকি</div>${totalDue>0 ? `<div class="val num">৳${app.fmtMoney(totalDue)}</div>` : `<div class="val" style="color:#2E7D46;">✔ পরিশোধ সম্পন্ন</div>`}</div>
+      </div>
+      <div class="rowGap noPrint" style="margin-bottom:14px;">
+        ${s.dueReceivable>0 ? `<button class="btn btn-primary btn-sm" onclick="app.openSettleForCustomer('${raw.replace(/'/g,"\\'")}','due-in')">✔ বাকি আদায় যুক্ত করুন (৳${app.fmtMoney(s.dueReceivable)})</button>` : ''}
+        ${s.duePayable>0 ? `<button class="btn btn-primary btn-sm" onclick="app.openSettleForCustomer('${raw.replace(/'/g,"\\'")}','due-out')">✔ বাকি পরিশোধ যুক্ত করুন (৳${app.fmtMoney(s.duePayable)})</button>` : ''}
       </div>
       <div class="flexRow" style="margin-bottom:8px;">
         <span class="muted">${list.length} টি লেনদেন পাওয়া গেছে (সম্পূর্ণ বিস্তারিতসহ)</span>
@@ -738,6 +790,14 @@ const app = {
     `;
     app._custList = list;
     app._custName = raw;
+  },
+  openSettleForCustomer(name, type){
+    app.switchTab('entry');
+    app.resetForm();
+    app.setEntryType(type);
+    document.getElementById('f-customer').value = name;
+    document.getElementById('f-date').value = app.todayISO();
+    setTimeout(()=>document.getElementById('f-amount').focus(), 100);
   },
   printCustomerHistory(){
     const list = app._custList||[];
@@ -785,13 +845,22 @@ const app = {
     const from = document.getElementById('rep-from').value;
     const to = document.getElementById('rep-to').value;
     const activePreset = document.querySelector('#presetRow button.on');
-    let label = app.state.reportRange.label;
+    let baseLabel;
     if(!activePreset || activePreset.dataset.p==='custom'){
-      label = 'কাস্টম রিপোর্ট ('+app.fmtDateDisplay(from)+' — '+app.fmtDateDisplay(to)+')';
+      baseLabel = 'কাস্টম রিপোর্ট ('+app.fmtDateDisplay(from)+' — '+app.fmtDateDisplay(to)+')';
+    } else {
+      baseLabel = app.state.reportRange.baseLabel || app.state.reportRange.label;
     }
-    app.state.reportRange = {from,to,label};
-    const list = app.state.records.filter(r=> (!from||r.date>=from) && (!to||r.date<=to) )
-      .sort((a,b)=>a.date.localeCompare(b.date));
+    const repType = document.getElementById('rep-type').value;
+    const typeLabels = {all:'', buy:' — ক্রয়ের হিসাব', sell:' — বিক্রয়ের হিসাব', expense:' — খরচের হিসাব', settle:' — বাকি আদায়/পরিশোধ'};
+    const label = baseLabel + (typeLabels[repType]||'');
+    app.state.reportRange = {from,to,label,baseLabel};
+    const list = app.state.records.filter(r=>{
+      if(!((!from||r.date>=from) && (!to||r.date<=to))) return false;
+      if(repType==='settle') return (r.type==='due-in'||r.type==='due-out');
+      if(repType!=='all') return r.type===repType;
+      return true;
+    }).sort((a,b)=>a.date.localeCompare(b.date));
     app.renderInvoiceDoc(list, label);
   },
   renderInvoiceDoc(list, label, withNotes){
@@ -850,7 +919,7 @@ const app = {
         pdf.addImage(imgData,'PNG',20,position,imgWidth,imgHeight);
         heightLeft -= (pdf.internal.pageSize.getHeight()-40);
       }
-      pdf.save('বালু-হিসাব-রিপোর্ট.pdf');
+      pdf.save('মদিনা-এন্টারপ্রাইজ-রিপোর্ট.pdf');
       app.toast('পিডিএফ ডাউনলোড হয়েছে');
     }catch(e){
       app.toast('পিডিএফ তৈরিতে সমস্যা হয়েছে, প্রিন্ট অপশন ব্যবহার করুন');
@@ -863,7 +932,7 @@ const app = {
     const blob = new Blob([data], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'balu-hisab-backup.json';
+    a.href = url; a.download = 'madina-enterprise-backup.json';
     a.click();
     URL.revokeObjectURL(url);
   },
