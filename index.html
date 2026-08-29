@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>মদিনা এন্টারপ্রাইজ - হিসাব খাতা</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2B2420">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="মদিনা এন্টারপ্রাইজ">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -371,6 +378,23 @@
 
 <script>
 const app = {
+  // Works both inside Claude (window.storage) and as a standalone hosted/offline app (localStorage fallback)
+  _store: {
+    async get(key){
+      if(window.storage && typeof window.storage.get==='function'){
+        try{ return await window.storage.get(key, false); }catch(e){ /* fall through to localStorage */ }
+      }
+      const v = localStorage.getItem(key);
+      return v===null ? null : {key, value:v};
+    },
+    async set(key, value){
+      if(window.storage && typeof window.storage.set==='function'){
+        try{ return await window.storage.set(key, value, false); }catch(e){ /* fall through to localStorage */ }
+      }
+      localStorage.setItem(key, value);
+      return {key, value};
+    }
+  },
   state:{
     records: [],
     settings: {name:'', phone:'', address:''},
@@ -414,16 +438,16 @@ const app = {
   // ---------- storage ----------
   async loadData(){
     try{
-      const r = await window.storage.get('balu_records_v1', false);
+      const r = await app._store.get('balu_records_v1');
       app.state.records = r && r.value ? JSON.parse(r.value) : [];
     }catch(e){ app.state.records = []; }
     try{
-      const s = await window.storage.get('balu_settings_v1', false);
+      const s = await app._store.get('balu_settings_v1');
       app.state.settings = s && s.value ? JSON.parse(s.value) : {name:'', phone:'', address:''};
     }catch(e){ app.state.settings = {name:'', phone:'', address:''}; }
     if(!app.state.settings.name){
       app.state.settings.name = 'মদিনা এন্টারপ্রাইজ';
-      try{ await window.storage.set('balu_settings_v1', JSON.stringify(app.state.settings), false); }catch(e){}
+      try{ await app._store.set('balu_settings_v1', JSON.stringify(app.state.settings)); }catch(e){}
     }
     document.getElementById('s-name').value = app.state.settings.name || '';
     document.getElementById('s-phone').value = app.state.settings.phone || '';
@@ -431,7 +455,7 @@ const app = {
     document.getElementById('brandName').textContent = app.state.settings.name || 'মদিনা এন্টারপ্রাইজ';
   },
   async saveRecords(){
-    try{ await window.storage.set('balu_records_v1', JSON.stringify(app.state.records), false); }
+    try{ await app._store.set('balu_records_v1', JSON.stringify(app.state.records)); }
     catch(e){ app.toast('সংরক্ষণে সমস্যা হয়েছে, আবার চেষ্টা করুন'); }
   },
   async saveSettings(){
@@ -441,7 +465,7 @@ const app = {
       address: document.getElementById('s-address').value.trim()
     };
     try{
-      await window.storage.set('balu_settings_v1', JSON.stringify(app.state.settings), false);
+      await app._store.set('balu_settings_v1', JSON.stringify(app.state.settings));
       document.getElementById('brandName').textContent = app.state.settings.name || 'মদিনা এন্টারপ্রাইজ';
       app.toast('তথ্য সংরক্ষণ হয়েছে');
     }catch(e){ app.toast('সংরক্ষণে সমস্যা হয়েছে'); }
@@ -947,6 +971,11 @@ const app = {
 };
 
 document.addEventListener('DOMContentLoaded', app.init);
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
