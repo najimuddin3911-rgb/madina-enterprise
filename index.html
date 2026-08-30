@@ -16,12 +16,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- Firebase SDK -->
+<!-- Firebase (Authentication + Firestore Database) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-
 <style>
   :root{
     --sand-bg:#FAF6EC;
@@ -100,11 +98,21 @@
   .formGrid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px 16px;}
   @media(max-width:760px){.formGrid{grid-template-columns:repeat(2,1fr);}}
   label{display:block; font-size:13px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
-  input[type=text], input[type=date], input[type=number], input[type=email], input[type=password], select, textarea{
+  input[type=text], input[type=date], input[type=number], select, textarea{
     width:100%; padding:9px 10px; border:1.5px solid var(--line); border-radius:8px;
     font-family:'Hind Siliguri',sans-serif; font-size:14.5px; background:#FFFDF8; color:var(--ink);
   }
   input:focus, select:focus, textarea:focus{outline:none; border-color:var(--gold);}
+  .typeToggle{display:flex; gap:8px; margin-bottom:16px;}
+  .typeToggle button{
+    flex:1; padding:11px; border-radius:10px; border:2px solid var(--line); background:#fff;
+    font-family:'Hind Siliguri',sans-serif; font-weight:700; font-size:14.5px; cursor:pointer; color:var(--ink-soft);
+  }
+  .typeToggle button.on.buy{border-color:var(--river); color:var(--river); background:var(--river-soft);}
+  .typeToggle button.on.sell{border-color:var(--gold-deep); color:var(--gold-deep); background:var(--gold-soft);}
+  .typeToggle button.on.expense{border-color:var(--rust); color:var(--rust); background:var(--rust-soft);}
+  .typeToggle button.on.duein{border-color:#2E7D46; color:#2E7D46; background:#E4F3E8;}
+  .typeToggle button.on.dueout{border-color:#8A5A2B; color:#8A5A2B; background:#F3E7D6;}
   .btn{
     display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:none; border-radius:9px;
     padding:10px 18px; font-family:'Hind Siliguri',sans-serif; font-weight:700; font-size:14px;
@@ -113,21 +121,82 @@
   .btn-primary:hover{background:#463A30;}
   .btn-outline{background:#fff; border:1.5px solid var(--line); color:var(--ink);}
   .btn-outline:hover{border-color:var(--gold);}
+  .btn-ghost{background:transparent; color:var(--ink-soft); padding:8px 10px;}
+  .btn-danger{color:var(--rust);}
+  .btn-sm{padding:6px 10px; font-size:12.5px; border-radius:7px;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  thead th{
+    text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft);
+    padding:9px 8px; border-bottom:2px solid var(--line); white-space:nowrap;
+  }
+  tbody td{padding:9px 8px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  tbody tr:hover{background:var(--sand-bg-alt);}
+  .badge{display:inline-block; padding:3px 9px; border-radius:20px; font-size:11.5px; font-weight:700;}
+  .badge.buy{background:var(--river-soft); color:var(--river);}
+  .badge.sell{background:var(--gold-soft); color:var(--gold-deep);}
+  .badge.expense{background:var(--rust-soft); color:var(--rust);}
+  .badge.due-in{background:#E4F3E8; color:#2E7D46;}
+  .badge.due-out{background:#F3E7D6; color:#8A5A2B;}
+  .tableWrap{overflow-x:auto; margin-top:14px;}
+  .filterBar{display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:6px;}
+  .filterBar > div{min-width:130px;}
+  .presetRow{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+  .presetRow button{
+    padding:8px 14px; border-radius:20px; border:1.5px solid var(--line); background:#fff; cursor:pointer;
+    font-family:'Hind Siliguri',sans-serif; font-weight:600; font-size:13px; color:var(--ink-soft);
+  }
+  .presetRow button.on{border-color:var(--gold); color:var(--gold-deep); background:var(--gold-soft);}
+  .empty{text-align:center; padding:40px 10px; color:var(--ink-soft);}
+  .empty .big{font-size:34px; margin-bottom:6px;}
+  .stockBar{height:12px; border-radius:8px; background:var(--sand-bg-alt); overflow:hidden; margin-top:8px; display:flex;}
+  .stockBar .in{background:linear-gradient(90deg, var(--river), #5C8F72);}
+  .stockBar .out{background:linear-gradient(90deg, var(--gold), var(--gold-deep));}
+  .flexRow{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .muted{color:var(--ink-soft); font-size:13px;}
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#F5EEDD; padding:11px 20px; border-radius:30px; font-size:13.5px;
+    box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:.25s; z-index:999;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+  #invoicePreview{margin-top:20px;}
+  .invoiceDoc{background:#fff; border:1px solid var(--line); border-radius:10px; padding:26px;}
+  .invoiceDoc h3{font-family:'Tiro Bangla',serif; font-size:22px; margin:0;}
+  .invoiceHead{display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid var(--ink); padding-bottom:12px; margin-bottom:16px;}
+  .invoiceTotals{margin-top:14px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+  @media(max-width:700px){.invoiceTotals{grid-template-columns:repeat(2,1fr);}}
+  .invoiceTotals div{background:var(--sand-bg-alt); border-radius:8px; padding:10px 12px;}
+  .invoiceTotals .lbl{font-size:11.5px; color:var(--ink-soft); font-weight:700;}
+  .invoiceTotals .val{font-size:16px; font-weight:700; margin-top:3px;}
+  .modalBg{position:fixed; inset:0; background:rgba(43,36,32,.45); display:none; align-items:center; justify-content:center; z-index:900; padding:16px;}
+  .modalBg.show{display:flex;}
+  .modalCard{background:#fff; border-radius:14px; padding:22px; max-width:420px; width:100%;}
   .rowGap{display:flex; gap:10px; flex-wrap:wrap;}
+  @media print{
+    body *{visibility:hidden;}
+    #invoicePreview, #invoicePreview *{visibility:visible;}
+    #invoicePreview{position:absolute; left:0; top:0; width:100%; margin:0;}
+    .noPrint{display:none !important;}
+  }
 
-  /* AUTH STYLES */
+  /* ---------- Auth screen ---------- */
   #authScreen{
     position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center;
-    background: radial-gradient(circle at 20% 30%, rgba(184,134,59,0.08) 0, transparent 2px), var(--sand-bg);
+    background:
+      radial-gradient(circle at 20% 30%, rgba(184,134,59,0.08) 0, transparent 2px),
+      radial-gradient(circle at 60% 70%, rgba(184,134,59,0.08) 0, transparent 2px),
+      var(--sand-bg);
+    background-size:26px 26px, 34px 34px, auto;
     padding:20px;
   }
-  #authScreen.hide, #appRoot.hide{display:none;}
+  #authScreen.hide{display:none;}
+  #appRoot.hide{display:none;}
   .authCard{
     background:var(--card); border:1px solid var(--line); border-radius:16px;
     padding:30px 26px; width:100%; max-width:400px; box-shadow:0 8px 30px rgba(43,36,32,.12);
   }
   .authBrand{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
-  .authBrand .brand-mark{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 35% 30%, var(--gold-soft), var(--gold) 60%, var(--gold-deep) 100%); flex:none;}
+  .authBrand .brand-mark{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 35% 30%, var(--gold-soft), var(--gold) 60%, var(--gold-deep) 100%); flex:none; box-shadow: inset 0 -3px 6px rgba(0,0,0,0.25);}
   .authBrand h1{font-family:'Tiro Bangla', serif; font-size:20px; margin:0; color:var(--ink);}
   .authBrand p{margin:2px 0 0; font-size:12px; color:var(--ink-soft);}
   .authTabs{display:flex; gap:6px; margin-bottom:18px; background:var(--sand-bg-alt); border-radius:10px; padding:4px;}
@@ -137,31 +206,39 @@
   }
   .authTabs button.on{background:#fff; color:var(--ink); box-shadow:var(--shadow);}
   .authForm{display:none; flex-direction:column; gap:13px;}
-  .authForm.on{display:flex !important;}
+  .authForm.on{display:flex;}
+  .authForm label{margin-bottom:0;}
   .pwdWrap{position:relative;}
   .pwdWrap input{padding-right:40px;}
   .pwdToggle{
     position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none;
-    cursor:pointer; font-size:16px; padding:6px; color:var(--ink-soft);
+    cursor:pointer; font-size:16px; padding:6px; color:var(--ink-soft); line-height:1;
   }
-  .authErr, .authMsg{
-    display:none; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; margin-bottom: 10px;
+  .authErr{
+    display:none; background:var(--rust-soft); color:var(--rust); border-radius:8px; padding:9px 12px;
+    font-size:13px; font-weight:600;
   }
-  .authErr{background:var(--rust-soft); color:var(--rust);}
-  .authMsg{background:var(--river-soft); color:var(--river);}
-  .authErr.show, .authMsg.show{display:block;}
-  .authLink{background:none; border:none; color:var(--gold-deep); font-weight:700; font-size:12.5px; cursor:pointer; padding:0;}
+  .authErr.show{display:block;}
+  .authMsg{
+    display:none; background:var(--river-soft); color:var(--river); border-radius:8px; padding:9px 12px;
+    font-size:13px; font-weight:600;
+  }
+  .authMsg.show{display:block;}
+  .authLink{background:none; border:none; color:var(--gold-deep); font-weight:700; font-size:12.5px; cursor:pointer; padding:0; text-align:left;}
+  .authSpin{display:none; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft);}
+  .authSpin.show{display:flex;}
   .userChip{display:flex; align-items:center; gap:10px;}
   .userChip .who{font-size:12px; color:#D8CBAE; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .logoutBtn{
     background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.2); color:#F5EEDD;
     border-radius:8px; padding:7px 12px; font-family:'Hind Siliguri',sans-serif; font-weight:600; font-size:12.5px; cursor:pointer;
   }
+  .logoutBtn:hover{background:rgba(255,255,255,.16);}
 </style>
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
+<!-- ============ AUTH SCREEN (Login / Register / Reset) ============ -->
 <div id="authScreen">
   <div class="authCard">
     <div class="authBrand">
@@ -173,18 +250,18 @@
     </div>
 
     <div class="authTabs" id="authTabs">
-      <button type="button" id="tabBtnLogin" data-authtab="login" class="on">লগইন</button>
-      <button type="button" id="tabBtnRegister" data-authtab="register">রেজিস্ট্রেশন</button>
+      <button type="button" data-authtab="login" class="on">লগইন</button>
+      <button type="button" data-authtab="register">রেজিস্ট্রেশন</button>
     </div>
 
     <div class="authErr" id="authErr"></div>
     <div class="authMsg" id="authMsg"></div>
 
-    <!-- LOGIN FORM -->
+    <!-- LOGIN -->
     <form class="authForm on" id="loginForm">
       <div>
         <label>ইমেইল বা মোবাইল নাম্বার</label>
-        <input type="text" id="li-id" placeholder="ইমেইল বা মোবাইল নাম্বার লিখুন" required autocomplete="username">
+        <input type="text" id="li-id" placeholder="আপনার ইমেইল লিখুন" required autocomplete="username">
       </div>
       <div>
         <label>পাসওয়ার্ড</label>
@@ -197,13 +274,18 @@
         <button type="button" class="authLink" id="forgotBtn">পাসওয়ার্ড ভুলে গেছেন?</button>
       </div>
       <button type="submit" class="btn btn-primary" style="justify-content:center;" id="loginBtn">প্রবেশ করুন</button>
+      <div class="authSpin" id="loginSpin"><span>⏳</span> অপেক্ষা করুন...</div>
     </form>
 
-    <!-- REGISTER FORM -->
+    <!-- REGISTER -->
     <form class="authForm" id="registerForm">
       <div>
-        <label>ইমেইল বা মোবাইল নাম্বার</label>
-        <input type="text" id="re-id" placeholder="আপনার ইমেইল বা মোবাইল নাম্বার" required autocomplete="username">
+        <label>ইমেইল</label>
+        <input type="email" id="re-email" placeholder="আপনার ইমেইল লিখুন" required autocomplete="username">
+      </div>
+      <div>
+        <label>মোবাইল নাম্বার (ঐচ্ছিক)</label>
+        <input type="text" id="re-phone" placeholder="যেমনঃ ০১৭xxxxxxxx" autocomplete="tel">
       </div>
       <div>
         <label>পাসওয়ার্ড</label>
@@ -213,191 +295,1047 @@
         </div>
       </div>
       <div>
-        <label>পাসওয়ার্ড নিশ্চিত করুন (Confirm Password)</label>
+        <label>পাসওয়ার্ড আবার লিখুন</label>
         <div class="pwdWrap">
-          <input type="password" id="re-pass2" placeholder="পাসওয়ার্ড পুনরায় লিখুন" required minlength="6" autocomplete="new-password">
+          <input type="password" id="re-pass2" placeholder="পাসওয়ার্ড নিশ্চিত করুন" required minlength="6" autocomplete="new-password">
           <button type="button" class="pwdToggle" data-toggle="re-pass2">👁</button>
         </div>
       </div>
       <button type="submit" class="btn btn-primary" style="justify-content:center;" id="registerBtn">একাউন্ট তৈরি করুন</button>
+      <div class="authSpin" id="registerSpin"><span>⏳</span> অপেক্ষা করুন...</div>
     </form>
 
-    <!-- RESET PASSWORD FORM -->
+    <!-- RESET PASSWORD -->
     <form class="authForm" id="resetForm">
-      <p style="margin:0 0 10px; font-size:13px; color:var(--ink-soft);">আপনার একাউন্টের ইমেইলটি লিখুন — পাসওয়ার্ড রিসেট করার লিংক পাঠিয়ে দেওয়া হবে।</p>
+      <p class="muted" style="margin:0;">আপনার একাউন্টের ইমেইলটি লিখুন — পাসওয়ার্ড রিসেট করার লিংক পাঠিয়ে দেওয়া হবে।</p>
       <div>
         <label>ইমেইল</label>
         <input type="email" id="rs-email" placeholder="আপনার ইমেইল লিখুন" required autocomplete="username">
       </div>
-      <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:10px;" id="resetBtn">রিসেট লিংক পাঠান</button>
-      <button type="button" class="authLink" id="backToLoginBtn" style="margin-top:12px; text-align:center;">← লগইনে ফিরে যান</button>
+      <button type="submit" class="btn btn-primary" style="justify-content:center;" id="resetBtn">রিসেট লিংক পাঠান</button>
+      <div class="authSpin" id="resetSpin"><span>⏳</span> অপেক্ষা করুন...</div>
+      <button type="button" class="authLink" id="backToLoginBtn">← লগইনে ফিরে যান</button>
     </form>
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- ============ MAIN APP (visible only after login) ============ -->
 <div id="appRoot" class="hide">
-  <header class="top">
-    <div class="brandRow">
-      <div class="brand">
-        <div class="brand-mark"></div>
-        <div>
-          <h1 id="brandName">মদিনা এন্টারপ্রাইজ</h1>
-          <p id="brandSub">ক্রয় • বিক্রয় • খরচ • লাভ-ক্ষতি</p>
-        </div>
-      </div>
-      <div class="userChip">
-        <span class="who" id="whoLabel"></span>
-        <button class="logoutBtn" id="logoutBtn" onclick="app.logout()">লগআউট</button>
-      </div>
-    </div>
-  </header>
 
-  <main>
-    <div class="card">
-      <h2>স্বাগতম! আপনি সফলভাবে লগইন করেছেন।</h2>
+<header class="top">
+  <div class="brandRow">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1 id="brandName">মদিনা এন্টারপ্রাইজ</h1>
+        <p id="brandSub">ক্রয় • বিক্রয় • খরচ • লাভ-ক্ষতি</p>
+      </div>
     </div>
-  </main>
+    <div class="userChip">
+      <div class="muted" style="color:#D8CBAE; font-size:13px;" id="todayLabel"></div>
+      <span class="who" id="whoLabel"></span>
+      <button class="logoutBtn" id="logoutBtn" onclick="app.logout()">লগআউট</button>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button data-tab="dashboard" class="active">ড্যাশবোর্ড</button>
+    <button data-tab="entry">নতুন এন্ট্রি</button>
+    <button data-tab="transactions">সকল লেনদেন</button>
+    <button data-tab="customers">নাম খুঁজুন</button>
+    <button data-tab="reports">রিপোর্ট / ইনভয়েস</button>
+    <button data-tab="settings">সেটিংস</button>
+  </nav>
+  <svg class="wave" viewBox="0 0 1100 16" preserveAspectRatio="none"><path d="M0,8 Q50,16 100,8 T200,8 T300,8 T400,8 T500,8 T600,8 T700,8 T800,8 T900,8 T1000,8 T1100,8 V16 H0 Z" fill="#FAF6EC"></path></svg>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section id="tab-dashboard" class="active">
+    <div class="flexRow" style="margin-bottom:16px;">
+      <h2 class="section-title">সার্বিক অবস্থা</h2>
+    </div>
+    <div class="grid grid-4" id="dashStats"></div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="flexRow">
+        <h3 style="margin:0; font-family:'Tiro Bangla',serif; font-size:17px;">বালুর স্টক (ফুট হিসাবে)</h3>
+        <span class="muted" id="stockText"></span>
+      </div>
+      <div class="stockBar"><div class="in" id="stockInBar"></div><div class="out" id="stockOutBar"></div></div>
+      <div class="flexRow" style="margin-top:6px; font-size:12.5px;" class="muted">
+        <span style="color:var(--river); font-weight:700;">■ ক্রয়কৃত ফুট</span>
+        <span style="color:var(--gold-deep); font-weight:700;">■ বিক্রিত ফুট</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="flexRow" style="margin-bottom:10px;">
+        <h3 style="margin:0; font-family:'Tiro Bangla',serif; font-size:17px;">সাম্প্রতিক লেনদেন</h3>
+        <button class="btn btn-outline btn-sm" onclick="app.switchTab('transactions')">সব দেখুন</button>
+      </div>
+      <div class="tableWrap"><table id="recentTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ENTRY -->
+  <section id="tab-entry">
+    <h2 class="section-title" id="entryTitle">নতুন এন্ট্রি যুক্ত করুন</h2>
+    <div class="card">
+      <div class="typeToggle">
+        <button type="button" class="buy" data-type="buy">🚛 ক্রয়</button>
+        <button type="button" class="sell" data-type="sell">💰 বিক্রয়</button>
+        <button type="button" class="expense" data-type="expense">🧾 খরচ</button>
+        <button type="button" class="duein" data-type="due-in">✔ বাকি আদায়</button>
+        <button type="button" class="dueout" data-type="due-out">✔ বাকি পরিশোধ</button>
+      </div>
+      <form id="entryForm">
+        <input type="hidden" id="f-id">
+        <div class="formGrid">
+          <div><label>তারিখ *</label><input type="date" id="f-date" required></div>
+          <div class="fld-goods"><label>চালান নং</label><input type="text" id="f-invoice" placeholder="যেমনঃ ১১৪৪৯"></div>
+          <div class="fld-goods"><label>গাড়ির নং</label><input type="text" id="f-vehicle" placeholder="যেমনঃ ১২.২৭"></div>
+          <div class="fld-party" id="fld-customer-wrap"><label id="lbl-customer">কাস্টমার / সাপ্লায়ারের নাম</label><input type="text" id="f-customer" placeholder="নাম লিখুন"></div>
+          <div class="fld-item"><label id="lbl-item">মালামাল / বিবরণ</label><input type="text" id="f-item" placeholder="যেমনঃ ২০ এমএম / এল.সি"></div>
+          <div class="fld-goods"><label>ফুট</label><input type="number" step="0.01" id="f-feet" placeholder="০.০০"></div>
+          <div class="fld-goods"><label>দর (প্রতি ফুট)</label><input type="number" step="0.01" id="f-rate" placeholder="০.০০"></div>
+          <div><label id="lbl-amount">টাকা (মোট) *</label><input type="number" step="0.01" id="f-amount" required placeholder="০.০০"></div>
+          <div class="fld-paid"><label id="lbl-paid">জমা</label><input type="number" step="0.01" id="f-paid" value="0"></div>
+          <div><label>বাকি</label><input type="number" step="0.01" id="f-due" readonly style="background:var(--sand-bg-alt); font-weight:700;"></div>
+          <div style="grid-column:1/-1;"><label>নোট (ঐচ্ছিক)</label><input type="text" id="f-note" placeholder="অতিরিক্ত তথ্য থাকলে লিখুন"></div>
+        </div>
+        <div class="rowGap" style="margin-top:16px;">
+          <button type="submit" class="btn btn-primary" id="saveBtn">✔ এন্ট্রি সংরক্ষণ করুন</button>
+          <button type="button" class="btn btn-outline" onclick="app.resetForm()">রিসেট করুন</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section id="tab-transactions">
+    <h2 class="section-title">সকল লেনদেন</h2>
+    <div class="card">
+      <div class="presetRow" id="txQuickRow">
+        <button data-t="all" class="on">সব</button>
+        <button data-t="buy">শুধু ক্রয়ের হিসাব</button>
+        <button data-t="sell">শুধু বিক্রয়ের হিসাব</button>
+        <button data-t="expense">শুধু খরচের হিসাব</button>
+        <button data-t="settle">✔ শুধু বাকি আদায়/পরিশোধ</button>
+      </div>
+      <div class="filterBar">
+        <div>
+          <label>ধরন</label>
+          <select id="filt-type">
+            <option value="all">সব</option>
+            <option value="buy">ক্রয়</option>
+            <option value="sell">বিক্রয়</option>
+            <option value="expense">খরচ</option>
+            <option value="due-in">বাকি আদায়</option>
+            <option value="due-out">বাকি পরিশোধ</option>
+            <option value="settle">বাকি আদায় + পরিশোধ (উভয়)</option>
+          </select>
+        </div>
+        <div style="min-width:180px;"><label>নাম দিয়ে খুঁজুন</label><input type="text" id="filt-q" placeholder="কাস্টমার/সাপ্লায়ারের নাম"></div>
+        <div><label>শুরুর তারিখ</label><input type="date" id="filt-from"></div>
+        <div><label>শেষ তারিখ</label><input type="date" id="filt-to"></div>
+        <div><button class="btn btn-outline" onclick="app.clearTxFilter()">ফিল্টার মুছুন</button></div>
+      </div>
+      <div class="tableWrap"><table id="txTable"></table></div>
+      <div class="flexRow" style="margin-top:12px;" id="txSummaryBar"></div>
+      <div class="rowGap noPrint" style="margin-top:12px;">
+        <button class="btn btn-primary btn-sm" onclick="app.printCurrentTxFilter()">🖨️ এই তালিকার ইনভয়েস তৈরি করুন</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CUSTOMERS -->
+  <section id="tab-customers">
+    <h2 class="section-title">কাস্টমার / সাপ্লায়ার ভিত্তিক হিসাব</h2>
+    <div class="card">
+      <div class="rowGap" style="align-items:end;">
+        <div style="flex:1; min-width:220px;"><label>নাম দিয়ে খুঁজুন</label><input type="text" id="cust-search" placeholder="যেমনঃ রহিম মিয়া" onkeyup="if(event.key==='Enter')app.searchCustomer()"></div>
+        <button class="btn btn-primary" onclick="app.searchCustomer()">🔍 খুঁজুন</button>
+        <button class="btn btn-outline" onclick="app.clearCustomerSearch()">সকল কাস্টমার তালিকা</button>
+      </div>
+      <div id="custResult" style="margin-top:18px;"></div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="tab-reports">
+    <h2 class="section-title">রিপোর্ট ও ইনভয়েস</h2>
+    <div class="card">
+      <div class="presetRow" id="presetRow">
+        <button data-p="today">আজকের</button>
+        <button data-p="week">এই সপ্তাহ</button>
+        <button data-p="month">এই মাস</button>
+        <button data-p="year">এই বছর</button>
+        <button data-p="custom">কাস্টম রেঞ্জ</button>
+      </div>
+      <div class="filterBar">
+        <div><label>ধরন</label>
+          <select id="rep-type">
+            <option value="all">সব (ক্রয় + বিক্রয় + খরচ)</option>
+            <option value="buy">শুধু ক্রয়ের হিসাব</option>
+            <option value="sell">শুধু বিক্রয়ের হিসাব</option>
+            <option value="expense">শুধু খরচের হিসাব</option>
+            <option value="settle">শুধু বাকি আদায়/পরিশোধ</option>
+          </select>
+        </div>
+        <div><label>শুরুর তারিখ</label><input type="date" id="rep-from"></div>
+        <div><label>শেষ তারিখ</label><input type="date" id="rep-to"></div>
+        <div><button class="btn btn-primary" onclick="app.buildReport()">রিপোর্ট তৈরি করুন</button></div>
+      </div>
+      <div id="invoicePreview"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings">
+    <h2 class="section-title">ব্যবসার তথ্য (ইনভয়েসে দেখাবে)</h2>
+    <div class="card">
+      <div class="formGrid">
+        <div><label>প্রতিষ্ঠানের নাম</label><input type="text" id="s-name" placeholder="যেমনঃ মেসার্স রিয়াজ এন্টারপ্রাইজ"></div>
+        <div><label>ফোন নম্বর</label><input type="text" id="s-phone" placeholder="যেমনঃ ০১৭xxxxxxxx"></div>
+        <div><label>ঠিকানা</label><input type="text" id="s-address" placeholder="ঐচ্ছিক"></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:14px;" onclick="app.saveSettings()">সংরক্ষণ করুন</button>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3 style="margin-top:0; font-family:'Tiro Bangla',serif;">ডেটা ব্যাকআপ</h3>
+      <p class="muted">আপনার সকল হিসাব এই ডিভাইসে/আপনার একাউন্টে নিরাপদে সংরক্ষিত থাকে। নিচের বাটনে চাপ দিয়ে একটি JSON ব্যাকআপ ফাইল ডাউনলোড করতে পারেন।</p>
+      <button class="btn btn-outline" onclick="app.exportBackup()">⬇ ব্যাকআপ ডাউনলোড করুন</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="modalBg" id="delModal">
+  <div class="modalCard">
+    <h3 style="margin-top:0; font-family:'Tiro Bangla',serif;">এন্ট্রি মুছে ফেলবেন?</h3>
+    <p class="muted">এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।</p>
+    <div class="rowGap" style="justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="app.closeModal()">বাতিল</button>
+      <button class="btn btn-primary btn-danger" style="background:var(--rust); color:#fff;" onclick="app.confirmDelete()">মুছে ফেলুন</button>
+    </div>
+  </div>
 </div>
+
+</div><!-- /#appRoot -->
 
 <script>
 // =====================================================================
-// Firebase Config
+// FIREBASE CONFIG — নিজের ফায়ারবেজ প্রজেক্টের কনফিগ এখানে বসান
+// (Firebase Console > Project settings > General > SDK setup and config)
 // =====================================================================
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyC_JrEqHJA6ZhDcxjcai1xnoZtFiT7SD2A",
+  authDomain: "madina-enterprise.firebaseapp.com",
+  projectId: "madina-enterprise",
+  storageBucket: "madina-enterprise.firebasestorage.app",
+  messagingSenderId: "1089033976128",
+  appId: "1:1089033976128:web:d9e8bfe3d8ad6c7188a2a5"
 };
-
-// Initialize Firebase if config is present
-if(firebaseConfig.apiKey !== "YOUR_API_KEY") {
-  firebase.initializeApp(firebaseConfig);
-}
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const PHONE_DOMAIN = 'madina-enterprise.local'; // phone দিয়ে রেজিস্ট্রেশনের জন্য অভ্যন্তরীণ সিউডো-ইমেইল ডোমেইন
 
 const app = {
   currentUser: null,
 
-  init(){
-    this.bindAuthUI();
-    
-    if(typeof firebase !== 'undefined' && firebase.auth){
-      firebase.auth().onAuthStateChanged((user)=>{
-        if(user){
-          app.currentUser = user;
-          document.getElementById('authScreen').classList.add('hide');
-          document.getElementById('appRoot').classList.remove('hide');
-          document.getElementById('whoLabel').textContent = user.email || user.phoneNumber || '';
-        } else {
-          app.currentUser = null;
-          document.getElementById('appRoot').classList.add('hide');
-          document.getElementById('authScreen').classList.remove('hide');
+  // Firestore-ভিত্তিক স্টোরেজ — প্রতিটি ইউজারের ডেটা তার নিজের একাউন্টের সাথে ক্লাউডে জমা থাকে,
+  // তাই ওয়েবসাইট আপডেট করলে বা অন্য ডিভাইসে লগইন করলেও আগের সব তথ্য থাকবে।
+  _store: {
+    async get(key){
+      if(!app.currentUser) return null;
+      try{
+        const snap = await db.collection('users').doc(app.currentUser.uid).get();
+        if(snap.exists){
+          const data = snap.data();
+          if(data && data[key]!==undefined) return {key, value:data[key]};
         }
-      });
+        return null;
+      }catch(e){ console.error(e); return null; }
+    },
+    async set(key, value){
+      if(!app.currentUser) return null;
+      try{
+        await db.collection('users').doc(app.currentUser.uid).set({[key]:value}, {merge:true});
+        return {key, value};
+      }catch(e){ console.error(e); throw e; }
     }
   },
+  state:{
+    records: [],
+    settings: {name:'', phone:'', address:''},
+    activeTab:'dashboard',
+    txFilter:{type:'all', q:'', from:'', to:''},
+    entryType:'buy',
+    pendingDeleteId:null,
+    reportRange:{from:'', to:'', label:'আজকের রিপোর্ট'}
+  },
 
+  // ================= AUTH =================
+  authInited:false,
   bindAuthUI(){
-    document.getElementById('tabBtnLogin').addEventListener('click', ()=>app.switchAuthTab('login'));
-    document.getElementById('tabBtnRegister').addEventListener('click', ()=>app.switchAuthTab('register'));
-
+    document.querySelectorAll('#authTabs button').forEach(b=>{
+      b.addEventListener('click', ()=>app.switchAuthTab(b.dataset.authtab));
+    });
     document.querySelectorAll('.pwdToggle').forEach(b=>{
-      b.addEventListener('click', (e)=>{
-        e.preventDefault();
+      b.addEventListener('click', ()=>{
         const inp = document.getElementById(b.dataset.toggle);
-        const show = inp.type === 'password';
-        inp.type = show ? 'text' : 'password';
-        b.textContent = show ? '🙈' : '👁';
+        const show = inp.type==='password';
+        inp.type = show ? 'text':'password';
+        b.textContent = show ? '🙈':'👁';
       });
     });
-
     document.getElementById('loginForm').addEventListener('submit', app.handleLogin);
     document.getElementById('registerForm').addEventListener('submit', app.handleRegister);
     document.getElementById('resetForm').addEventListener('submit', app.handleReset);
     document.getElementById('forgotBtn').addEventListener('click', ()=>app.switchAuthTab('reset'));
     document.getElementById('backToLoginBtn').addEventListener('click', ()=>app.switchAuthTab('login'));
-  },
 
+    auth.onAuthStateChanged(async (user)=>{
+      if(user){
+        app.currentUser = user;
+        document.getElementById('authScreen').classList.add('hide');
+        document.getElementById('appRoot').classList.remove('hide');
+        document.getElementById('whoLabel').textContent = app.displayIdentity(user);
+        if(!app.authInited){
+          app.authInited = true;
+          await app.migrateLocalDataIfAny();
+          await app.startApp();
+        }
+      } else {
+        app.currentUser = null;
+        app.authInited = false;
+        document.getElementById('appRoot').classList.add('hide');
+        document.getElementById('authScreen').classList.remove('hide');
+        app.switchAuthTab('login');
+      }
+    });
+  },
+  displayIdentity(user){
+    if(user.email && user.email.endsWith('@'+PHONE_DOMAIN)) return user.email.split('@')[0];
+    return user.email || '';
+  },
   switchAuthTab(tab){
     app.clearAuthMsgs();
+    const map = {login:'loginForm', register:'registerForm', reset:'resetForm'};
     document.querySelectorAll('.authForm').forEach(f=>f.classList.remove('on'));
-    
-    if(tab === 'login') {
-      document.getElementById('loginForm').classList.add('on');
-    } else if(tab === 'register') {
-      document.getElementById('registerForm').classList.add('on');
-    } else if(tab === 'reset') {
-      document.getElementById('resetForm').classList.add('on');
-    }
-
-    document.querySelectorAll('#authTabs button').forEach(b=>{
-      b.classList.toggle('on', b.dataset.authtab === tab);
-    });
-    
-    document.getElementById('authTabs').style.display = (tab === 'reset') ? 'none' : 'flex';
+    document.getElementById(map[tab]).classList.add('on');
+    document.querySelectorAll('#authTabs button').forEach(b=>b.classList.toggle('on', b.dataset.authtab===tab));
+    document.getElementById('authTabs').style.display = (tab==='reset') ? 'none':'flex';
   },
-
   showAuthErr(msg){
     const e = document.getElementById('authErr'); e.textContent = msg; e.classList.add('show');
+    document.getElementById('authMsg').classList.remove('show');
   },
   showAuthMsg(msg){
     const m = document.getElementById('authMsg'); m.textContent = msg; m.classList.add('show');
+    document.getElementById('authErr').classList.remove('show');
   },
   clearAuthMsgs(){
     document.getElementById('authErr').classList.remove('show');
     document.getElementById('authMsg').classList.remove('show');
   },
-
-  formatEmail(id){
-    if(!id.includes('@')) return id + "@madina.com";
-    return id;
+  authFirebaseErr(e){
+    const c = e && e.code || '';
+    const map = {
+      'auth/invalid-email':'সঠিক ইমেইল/মোবাইল নাম্বার দিন',
+      'auth/user-not-found':'এই তথ্য দিয়ে কোনো একাউন্ট পাওয়া যায়নি',
+      'auth/wrong-password':'পাসওয়ার্ড সঠিক নয়',
+      'auth/invalid-credential':'ইমেইল/মোবাইল অথবা পাসওয়ার্ড সঠিক নয়',
+      'auth/email-already-in-use':'এই ইমেইল/নাম্বার দিয়ে আগেই একাউন্ট আছে, লগইন করুন',
+      'auth/weak-password':'পাসওয়ার্ড কমপক্ষে ৬ ডিজিট/অক্ষরের হতে হবে',
+      'auth/too-many-requests':'অনেকবার চেষ্টা হয়েছে, কিছুক্ষণ পর আবার চেষ্টা করুন',
+      'auth/network-request-failed':'ইন্টারনেট সংযোগ চেক করুন'
+    };
+    return map[c] || ('একটি সমস্যা হয়েছে (' + c + ')');
   },
-
-  async handleLogin(e){
-    e.preventDefault(); app.clearAuthMsgs();
-    const id = document.getElementById('li-id').value.trim();
+  async handleLogin(ev){
+    ev.preventDefault();
+    app.clearAuthMsgs();
+    const idRaw = document.getElementById('li-id').value.trim();
     const pass = document.getElementById('li-pass').value;
+    if(!idRaw || !pass){ app.showAuthErr('সব ঘর পূরণ করুন'); return; }
+    document.getElementById('loginSpin').classList.add('show');
+    document.getElementById('loginBtn').disabled = true;
     try{
-      await firebase.auth().signInWithEmailAndPassword(app.formatEmail(id), pass);
-    }catch(err){ app.showAuthErr("ইমেইল/মোবাইল বা পাসওয়ার্ড ভুল হয়েছে"); }
+      let email = idRaw;
+      if(!idRaw.includes('@')){
+        // মোবাইল নাম্বার দিয়ে লগইন — phoneIndex থেকে সিউডো-ইমেইল খুঁজে বের করা হয়
+        const digits = idRaw.replace(/[^0-9]/g,'');
+        const snap = await db.collection('phoneIndex').doc(digits).get();
+        if(!snap.exists){ throw {code:'auth/user-not-found'}; }
+        email = snap.data().email;
+      }
+      await auth.signInWithEmailAndPassword(email, pass);
+    }catch(e){
+      app.showAuthErr(app.authFirebaseErr(e));
+    }finally{
+      document.getElementById('loginSpin').classList.remove('show');
+      document.getElementById('loginBtn').disabled = false;
+    }
   },
-
-  async handleRegister(e){
-    e.preventDefault(); app.clearAuthMsgs();
-    const id = document.getElementById('re-id').value.trim();
+  async handleRegister(ev){
+    ev.preventDefault();
+    app.clearAuthMsgs();
+    const email = document.getElementById('re-email').value.trim();
+    const phone = document.getElementById('re-phone').value.trim();
     const pass = document.getElementById('re-pass').value;
     const pass2 = document.getElementById('re-pass2').value;
-
-    if(pass !== pass2){
-      app.showAuthErr("দুই পাসওয়ার্ড এক নয়!"); return;
+    if(!email){ app.showAuthErr('ইমেইল দিন'); return; }
+    if(pass.length<6){ app.showAuthErr('পাসওয়ার্ড কমপক্ষে ৬ ডিজিট/অক্ষর হতে হবে'); return; }
+    if(pass!==pass2){ app.showAuthErr('দুইটি পাসওয়ার্ড একই হয়নি, আবার লিখুন'); return; }
+    document.getElementById('registerSpin').classList.add('show');
+    document.getElementById('registerBtn').disabled = true;
+    try{
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      const digits = phone.replace(/[^0-9]/g,'');
+      const profile = {email, phone, createdAt: new Date().toISOString()};
+      await db.collection('users').doc(cred.user.uid).set({profile}, {merge:true});
+      if(digits){
+        await db.collection('phoneIndex').doc(digits).set({email, uid:cred.user.uid});
+      }
+      app.showAuthMsg('একাউন্ট তৈরি হয়েছে, স্বয়ংক্রিয়ভাবে লগইন হচ্ছে...');
+    }catch(e){
+      app.showAuthErr(app.authFirebaseErr(e));
+    }finally{
+      document.getElementById('registerSpin').classList.remove('show');
+      document.getElementById('registerBtn').disabled = false;
     }
+  },
+  async handleReset(ev){
+    ev.preventDefault();
+    app.clearAuthMsgs();
+    const idRaw = document.getElementById('rs-email').value.trim();
+    if(!idRaw){ app.showAuthErr('ইমেইল দিন'); return; }
+    document.getElementById('resetSpin').classList.add('show');
+    document.getElementById('resetBtn').disabled = true;
     try{
-      await firebase.auth().createUserWithEmailAndPassword(app.formatEmail(id), pass);
-      app.showAuthMsg("একাউন্ট সফলভাবে তৈরি হয়েছে!");
-    }catch(err){ app.showAuthErr(err.message); }
+      let email = idRaw;
+      if(!idRaw.includes('@')){
+        const digits = idRaw.replace(/[^0-9]/g,'');
+        const snap = await db.collection('phoneIndex').doc(digits).get();
+        if(!snap.exists){ throw {code:'auth/user-not-found'}; }
+        email = snap.data().email;
+      }
+      if(email.endsWith('@'+PHONE_DOMAIN)){
+        app.showAuthErr('মোবাইল নাম্বার দিয়ে খোলা একাউন্টে ইমেইলে রিসেট লিংক পাঠানো সম্ভব নয়। পাসওয়ার্ড মনে রাখুন, প্রয়োজনে নতুন করে ইমেইল দিয়ে একাউন্ট করুন।');
+        return;
+      }
+      await auth.sendPasswordResetEmail(email);
+      app.showAuthMsg('রিসেট লিংক ইমেইলে পাঠানো হয়েছে, ইনবক্স/স্প্যাম চেক করুন।');
+    }catch(e){
+      app.showAuthErr(app.authFirebaseErr(e));
+    }finally{
+      document.getElementById('resetSpin').classList.remove('show');
+      document.getElementById('resetBtn').disabled = false;
+    }
+  },
+  async logout(){
+    try{ await auth.signOut(); }catch(e){}
   },
 
-  async handleReset(e){
-    e.preventDefault(); app.clearAuthMsgs();
-    const email = document.getElementById('rs-email').value.trim();
+  // একবারই চালু হয়: প্রথম লগইনে যদি এই ব্রাউজারে (localStorage) পুরাতন ডেটা থেকে যায়, তা ক্লাউডে নিয়ে আসে
+  async migrateLocalDataIfAny(){
     try{
-      await firebase.auth().sendPasswordResetEmail(email);
-      app.showAuthMsg("আপনার ইমেইলে পাসওয়ার্ড রিসেট লিংক পাঠানো হয়েছে।");
-    }catch(err){ app.showAuthErr("ইমেইলটি সঠিক নয় বা পাওয়া যায়নি।"); }
+      const snap = await db.collection('users').doc(app.currentUser.uid).get();
+      const already = snap.exists && snap.data() && snap.data().balu_records_v1;
+      if(already) return; // ক্লাউডে আগে থেকেই ডেটা আছে, স্থানান্তরের দরকার নেই
+      const localRecords = localStorage.getItem('balu_records_v1');
+      const localSettings = localStorage.getItem('balu_settings_v1');
+      if(localRecords || localSettings){
+        const payload = {};
+        if(localRecords) payload.balu_records_v1 = localRecords;
+        if(localSettings) payload.balu_settings_v1 = localSettings;
+        await db.collection('users').doc(app.currentUser.uid).set(payload, {merge:true});
+        app.toast('আগের ডিভাইসের হিসাব ক্লাউড একাউন্টে যুক্ত হয়েছে');
+      }
+    }catch(e){ console.error(e); }
   },
 
-  logout(){ 
-    if(firebase.auth()) firebase.auth().signOut(); 
+  // ================= APP (লগইনের পরে চালু হয়) =================
+  async startApp(){
+    document.getElementById('todayLabel').textContent = 'আজ: ' + app.fmtDateDisplay(app.todayISO());
+    await app.loadData();
+    app.setEntryType('buy');
+    document.getElementById('f-date').value = app.todayISO();
+    app.applyPreset('today');
+    app.renderAll();
+  },
+
+  async init(){
+    document.querySelectorAll('nav.tabs button').forEach(b=>{
+      b.addEventListener('click', ()=>app.switchTab(b.dataset.tab));
+    });
+    document.querySelectorAll('.typeToggle button').forEach(b=>{
+      b.addEventListener('click', ()=>app.setEntryType(b.dataset.type));
+    });
+    document.getElementById('entryForm').addEventListener('submit', app.handleSubmit);
+    ['f-feet','f-rate'].forEach(id=>document.getElementById(id).addEventListener('input', app.autoCalcAmount));
+    ['f-amount','f-paid'].forEach(id=>document.getElementById(id).addEventListener('input', app.autoCalcDue));
+    document.getElementById('filt-type').addEventListener('change', app.applyTxFilter);
+    document.getElementById('filt-q').addEventListener('input', app.applyTxFilter);
+    document.getElementById('filt-from').addEventListener('change', app.applyTxFilter);
+    document.getElementById('filt-to').addEventListener('change', app.applyTxFilter);
+    document.querySelectorAll('#txQuickRow button').forEach(b=>{
+      b.addEventListener('click', ()=>app.quickTypeFilter(b.dataset.t));
+    });
+    document.querySelectorAll('#presetRow button').forEach(b=>{
+      b.addEventListener('click', ()=>app.applyPreset(b.dataset.p));
+    });
+    document.getElementById('rep-type').addEventListener('change', app.buildReport);
+
+    app.bindAuthUI();
+  },
+
+  // ---------- storage ----------
+  async loadData(){
+    try{
+      const r = await app._store.get('balu_records_v1');
+      app.state.records = r && r.value ? JSON.parse(r.value) : [];
+    }catch(e){ app.state.records = []; }
+    try{
+      const s = await app._store.get('balu_settings_v1');
+      app.state.settings = s && s.value ? JSON.parse(s.value) : {name:'', phone:'', address:''};
+    }catch(e){ app.state.settings = {name:'', phone:'', address:''}; }
+    if(!app.state.settings.name){
+      app.state.settings.name = 'মদিনা এন্টারপ্রাইজ';
+      try{ await app._store.set('balu_settings_v1', JSON.stringify(app.state.settings)); }catch(e){}
+    }
+    document.getElementById('s-name').value = app.state.settings.name || '';
+    document.getElementById('s-phone').value = app.state.settings.phone || '';
+    document.getElementById('s-address').value = app.state.settings.address || '';
+    document.getElementById('brandName').textContent = app.state.settings.name || 'মদিনা এন্টারপ্রাইজ';
+  },
+  async saveRecords(){
+    try{ await app._store.set('balu_records_v1', JSON.stringify(app.state.records)); }
+    catch(e){ app.toast('সংরক্ষণে সমস্যা হয়েছে, আবার চেষ্টা করুন'); }
+  },
+  async saveSettings(){
+    app.state.settings = {
+      name: document.getElementById('s-name').value.trim(),
+      phone: document.getElementById('s-phone').value.trim(),
+      address: document.getElementById('s-address').value.trim()
+    };
+    try{
+      await app._store.set('balu_settings_v1', JSON.stringify(app.state.settings));
+      document.getElementById('brandName').textContent = app.state.settings.name || 'মদিনা এন্টারপ্রাইজ';
+      app.toast('তথ্য সংরক্ষণ হয়েছে');
+    }catch(e){ app.toast('সংরক্ষণে সমস্যা হয়েছে'); }
+  },
+
+  // ---------- helpers ----------
+  todayISO(){ const d=new Date(); return d.toISOString().slice(0,10); },
+  uid(){ return 'r'+Date.now()+Math.random().toString(16).slice(2,8); },
+  fmtMoney(n){ n = Number(n)||0; return n.toLocaleString('en-US',{maximumFractionDigits:2}); },
+  fmtDateDisplay(iso){
+    if(!iso) return '-';
+    const [y,m,d] = iso.split('-');
+    return d+'-'+m+'-'+y;
+  },
+  typeLabel(t){
+    if(t==='buy') return 'ক্রয়';
+    if(t==='sell') return 'বিক্রয়';
+    if(t==='expense') return 'খরচ';
+    if(t==='due-in') return '✔ বাকি আদায়';
+    if(t==='due-out') return '✔ বাকি পরিশোধ';
+    return t;
+  },
+  toast(msg){
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(app._toastTimer); app._toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+  },
+
+  // ---------- nav ----------
+  switchTab(tab){
+    app.state.activeTab = tab;
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    document.querySelectorAll('main > section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    if(tab==='transactions') app.applyTxFilter();
+    if(tab==='dashboard') app.renderDashboard();
+    if(tab==='customers' && !document.getElementById('cust-search').value.trim()) app.renderCustomerDirectory();
+  },
+
+  // ---------- entry form ----------
+  setEntryType(type){
+    app.state.entryType = type;
+    document.querySelectorAll('.typeToggle button').forEach(b=>{
+      b.classList.toggle('on', b.dataset.type===type);
+    });
+    const isSettle = (type==='due-in' || type==='due-out');
+    const showGoods = (type==='buy' || type==='sell');
+    const showParty = !(type==='expense');
+    const showPaid = !isSettle;
+    document.querySelectorAll('.fld-goods').forEach(el=>el.style.display = showGoods ? 'block':'none');
+    document.querySelectorAll('.fld-party').forEach(el=>el.style.display = showParty ? 'block':'none');
+    document.querySelectorAll('.fld-paid').forEach(el=>el.style.display = showPaid ? 'block':'none');
+    document.getElementById('lbl-customer').textContent = (type==='buy') ? 'সাপ্লায়ারের নাম' : (type==='due-out' ? 'সাপ্লায়ারের নাম' : 'কাস্টমারের নাম');
+    document.getElementById('lbl-item').textContent = type==='expense' ? 'খরচের বিবরণ' : (isSettle ? 'বিবরণ (ঐচ্ছিক)' : 'মালামাল');
+    document.getElementById('lbl-paid').textContent = type==='buy' ? 'জমা (সাপ্লায়ারকে দেওয়া)' : 'জমা (কাস্টমার থেকে পাওয়া)';
+    document.getElementById('lbl-amount').textContent = isSettle ? (type==='due-in' ? 'আদায়কৃত টাকা *' : 'পরিশোধকৃত টাকা *') : 'টাকা (মোট) *';
+    if(type==='expense'){
+      document.getElementById('f-paid').value = document.getElementById('f-amount').value || 0;
+      app.autoCalcDue();
+    }
+    if(isSettle){
+      app.autoCalcDue();
+    }
+  },
+  autoCalcAmount(){
+    const feet = parseFloat(document.getElementById('f-feet').value)||0;
+    const rate = parseFloat(document.getElementById('f-rate').value)||0;
+    if(feet && rate){
+      document.getElementById('f-amount').value = (feet*rate).toFixed(2);
+    }
+    app.autoCalcDue();
+  },
+  autoCalcDue(){
+    const amount = parseFloat(document.getElementById('f-amount').value)||0;
+    const isSettle = (app.state.entryType==='due-in' || app.state.entryType==='due-out');
+    const paid = isSettle ? amount : (parseFloat(document.getElementById('f-paid').value)||0);
+    document.getElementById('f-due').value = (amount-paid).toFixed(2);
+  },
+  resetForm(){
+    document.getElementById('entryForm').reset();
+    document.getElementById('f-id').value='';
+    document.getElementById('f-date').value = app.todayISO();
+    document.getElementById('f-paid').value = 0;
+    document.getElementById('f-due').value = 0;
+    document.getElementById('saveBtn').textContent = '✔ এন্ট্রি সংরক্ষণ করুন';
+    document.getElementById('entryTitle').textContent = 'নতুন এন্ট্রি যুক্ত করুন';
+    app.setEntryType(app.state.entryType);
+  },
+  handleSubmit(e){
+    e.preventDefault();
+    const id = document.getElementById('f-id').value || app.uid();
+    const amount = parseFloat(document.getElementById('f-amount').value)||0;
+    const isSettle = (app.state.entryType==='due-in' || app.state.entryType==='due-out');
+    const paid = isSettle ? amount : (parseFloat(document.getElementById('f-paid').value)||0);
+    const rec = {
+      id,
+      type: app.state.entryType,
+      date: document.getElementById('f-date').value,
+      invoiceNo: document.getElementById('f-invoice').value.trim(),
+      vehicleNo: document.getElementById('f-vehicle').value.trim(),
+      customer: document.getElementById('f-customer').value.trim(),
+      item: document.getElementById('f-item').value.trim(),
+      feet: parseFloat(document.getElementById('f-feet').value)||0,
+      rate: parseFloat(document.getElementById('f-rate').value)||0,
+      amount, paid, due: amount-paid,
+      note: document.getElementById('f-note').value.trim()
+    };
+    const idx = app.state.records.findIndex(r=>r.id===id);
+    if(idx>-1) app.state.records[idx]=rec; else app.state.records.push(rec);
+    app.saveRecords();
+    app.toast(idx>-1 ? 'এন্ট্রি আপডেট হয়েছে' : 'নতুন এন্ট্রি যুক্ত হয়েছে');
+    app.resetForm();
+    app.renderAll();
+    app.switchTab('transactions');
+  },
+  editRecord(id){
+    const r = app.state.records.find(x=>x.id===id);
+    if(!r) return;
+    app.setEntryType(r.type);
+    document.getElementById('f-id').value = r.id;
+    document.getElementById('f-date').value = r.date;
+    document.getElementById('f-invoice').value = r.invoiceNo||'';
+    document.getElementById('f-vehicle').value = r.vehicleNo||'';
+    document.getElementById('f-customer').value = r.customer||'';
+    document.getElementById('f-item').value = r.item||'';
+    document.getElementById('f-feet').value = r.feet||'';
+    document.getElementById('f-rate').value = r.rate||'';
+    document.getElementById('f-amount').value = r.amount||0;
+    document.getElementById('f-paid').value = r.paid||0;
+    document.getElementById('f-due').value = r.due||0;
+    document.getElementById('f-note').value = r.note||'';
+    document.getElementById('saveBtn').textContent = '✔ পরিবর্তন সংরক্ষণ করুন';
+    document.getElementById('entryTitle').textContent = 'এন্ট্রি সম্পাদনা করুন';
+    app.switchTab('entry');
+  },
+  askDelete(id){
+    app.state.pendingDeleteId = id;
+    document.getElementById('delModal').classList.add('show');
+  },
+  closeModal(){ document.getElementById('delModal').classList.remove('show'); app.state.pendingDeleteId=null; },
+  confirmDelete(){
+    app.state.records = app.state.records.filter(r=>r.id!==app.state.pendingDeleteId);
+    app.saveRecords();
+    app.closeModal();
+    app.toast('এন্ট্রি মুছে ফেলা হয়েছে');
+    app.renderAll();
+  },
+
+  // ---------- computations ----------
+  summarize(list){
+    const s = {buy:0, sell:0, expense:0, paidIn:0, paidOut:0, dueReceivable:0, duePayable:0, feetBought:0, feetSold:0};
+    list.forEach(r=>{
+      if(r.type==='buy'){ s.buy+=r.amount; s.paidOut+=r.paid; s.duePayable+=Math.max(r.due,0); s.feetBought+=r.feet||0; }
+      else if(r.type==='sell'){ s.sell+=r.amount; s.paidIn+=r.paid; s.dueReceivable+=Math.max(r.due,0); s.feetSold+=r.feet||0; }
+      else if(r.type==='expense'){ s.expense+=r.amount; }
+      else if(r.type==='due-in'){ s.paidIn+=r.amount; s.dueReceivable-=r.amount; }
+      else if(r.type==='due-out'){ s.paidOut+=r.amount; s.duePayable-=r.amount; }
+    });
+    if(s.dueReceivable<0) s.dueReceivable=0;
+    if(s.duePayable<0) s.duePayable=0;
+    s.profit = s.sell - s.buy - s.expense;
+    s.stock = s.feetBought - s.feetSold;
+    return s;
+  },
+
+  // ---------- dashboard ----------
+  renderDashboard(){
+    const s = app.summarize(app.state.records);
+    const cards = [
+      {lbl:'মোট ক্রয়', val:'৳ '+app.fmtMoney(s.buy), cls:'river'},
+      {lbl:'মোট বিক্রয়', val:'৳ '+app.fmtMoney(s.sell), cls:'gold'},
+      {lbl:'মোট খরচ', val:'৳ '+app.fmtMoney(s.expense), cls:'rust'},
+      {lbl:'নিট লাভ', val:'৳ '+app.fmtMoney(s.profit), cls:'ink'},
+      {lbl:'কাস্টমারের কাছে পাওনা (বাকি)', val:'৳ '+app.fmtMoney(s.dueReceivable), cls:'gold'},
+      {lbl:'সাপ্লায়ারকে দেনা (বাকি)', val:'৳ '+app.fmtMoney(s.duePayable), cls:'river'},
+      {lbl:'মোট এন্ট্রি', val:app.state.records.length, cls:'ink'},
+      {lbl:'স্টকে ফুট', val:app.fmtMoney(s.stock), cls:'rust'},
+    ];
+    document.getElementById('dashStats').innerHTML = cards.map(c=>`
+      <div class="card stat ${c.cls}"><div class="lbl">${c.lbl}</div><div class="val num">${c.val}</div></div>
+    `).join('');
+
+    const total = (s.feetBought+s.feetSold)||1;
+    document.getElementById('stockInBar').style.width = (s.feetBought/total*100)+'%';
+    document.getElementById('stockOutBar').style.width = (s.feetSold/total*100)+'%';
+    document.getElementById('stockText').textContent = `ক্রয়: ${app.fmtMoney(s.feetBought)} ফুট · বিক্রয়: ${app.fmtMoney(s.feetSold)} ফুট`;
+
+    const recent = [...app.state.records].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+    document.getElementById('recentTable').innerHTML = app.buildTableHTML(recent, false);
+  },
+
+  // ---------- transactions table ----------
+  buildTableHTML(list, withActions, withNotes){
+    if(list.length===0){
+      return `<tbody><tr><td colspan="12"><div class="empty"><div class="big">📋</div>কোনো এন্ট্রি পাওয়া যায়নি</div></td></tr></tbody>`;
+    }
+    const head = `<thead><tr>
+      <th>তারিখ</th><th>ধরন</th><th>চালান নং</th><th>গাড়ির নং</th><th>নাম</th><th>মালামাল</th>
+      <th>ফুট</th><th>দর</th><th>টাকা</th><th>জমা</th><th>বাকি</th>${withNotes?'<th>নোট</th>':''}${withActions?'<th></th>':''}
+    </tr></thead>`;
+    const rows = list.map(r=>`
+      <tr>
+        <td>${app.fmtDateDisplay(r.date)}</td>
+        <td><span class="badge ${r.type}">${app.typeLabel(r.type)}</span></td>
+        <td>${r.invoiceNo||'-'}</td>
+        <td>${r.vehicleNo||'-'}</td>
+        <td>${r.customer||'-'}</td>
+        <td>${r.item||'-'}</td>
+        <td class="num">${r.feet?app.fmtMoney(r.feet):'-'}</td>
+        <td class="num">${r.rate?app.fmtMoney(r.rate):'-'}</td>
+        <td class="num">${app.fmtMoney(r.amount)}</td>
+        <td class="num">${app.fmtMoney(r.paid)}</td>
+        <td class="num" style="color:${r.due>0?'var(--rust)':'var(--river)'}; font-weight:700;">${app.fmtMoney(r.due)}</td>
+        ${withNotes?`<td>${r.note||'-'}</td>`:''}
+        ${withActions?`<td class="noPrint"><button class="btn btn-ghost btn-sm" onclick="app.editRecord('${r.id}')">✏️</button><button class="btn btn-ghost btn-sm btn-danger" onclick="app.askDelete('${r.id}')">🗑️</button></td>`:''}
+      </tr>
+    `).join('');
+    return head+'<tbody>'+rows+'</tbody>';
+  },
+  applyTxFilter(){
+    app.state.txFilter = {
+      type: document.getElementById('filt-type').value,
+      q: document.getElementById('filt-q').value.trim().toLowerCase(),
+      from: document.getElementById('filt-from').value,
+      to: document.getElementById('filt-to').value
+    };
+    const f = app.state.txFilter;
+    let list = app.state.records.filter(r=>{
+      if(f.type==='settle'){ if(!(r.type==='due-in'||r.type==='due-out')) return false; }
+      else if(f.type!=='all' && r.type!==f.type) return false;
+      if(f.q && !(r.customer||'').toLowerCase().includes(f.q)) return false;
+      if(f.from && r.date < f.from) return false;
+      if(f.to && r.date > f.to) return false;
+      return true;
+    }).sort((a,b)=>b.date.localeCompare(a.date));
+    document.getElementById('txTable').innerHTML = app.buildTableHTML(list, true);
+    const s = app.summarize(list);
+    document.getElementById('txSummaryBar').innerHTML = `
+      <span class="muted">মোট ফলাফল: <b class="num">${list.length}</b> টি</span>
+      <span class="muted">ক্রয়: <b class="num">৳${app.fmtMoney(s.buy)}</b> · বিক্রয়: <b class="num">৳${app.fmtMoney(s.sell)}</b> · খরচ: <b class="num">৳${app.fmtMoney(s.expense)}</b> · লাভ: <b class="num">৳${app.fmtMoney(s.profit)}</b></span>
+    `;
+    document.querySelectorAll('#txQuickRow button').forEach(b=>b.classList.toggle('on', b.dataset.t===f.type));
+  },
+  clearTxFilter(){
+    document.getElementById('filt-type').value='all';
+    document.getElementById('filt-q').value='';
+    document.getElementById('filt-from').value='';
+    document.getElementById('filt-to').value='';
+    app.applyTxFilter();
+  },
+  quickTypeFilter(t){
+    document.getElementById('filt-type').value = t;
+    app.applyTxFilter();
+  },
+  printCurrentTxFilter(){
+    const f = app.state.txFilter;
+    let list = app.state.records.filter(r=>{
+      if(f.type==='settle'){ if(!(r.type==='due-in'||r.type==='due-out')) return false; }
+      else if(f.type!=='all' && r.type!==f.type) return false;
+      if(f.q && !(r.customer||'').toLowerCase().includes(f.q)) return false;
+      if(f.from && r.date < f.from) return false;
+      if(f.to && r.date > f.to) return false;
+      return true;
+    }).sort((a,b)=>a.date.localeCompare(b.date));
+    if(list.length===0){ app.toast('তালিকা খালি, ইনভয়েস তৈরি করা যাচ্ছে না'); return; }
+    const typeLabels = {all:'সকল লেনদেনের হিসাব', buy:'ক্রয়ের হিসাব', sell:'বিক্রয়ের হিসাব', expense:'খরচের হিসাব', 'due-in':'বাকি আদায়ের হিসাব', 'due-out':'বাকি পরিশোধের হিসাব', settle:'বাকি আদায়/পরিশোধের হিসাব'};
+    let label = typeLabels[f.type] || 'সকল লেনদেনের হিসাব';
+    if(f.q) label += ' — নাম: ' + document.getElementById('filt-q').value.trim();
+    if(f.from || f.to) label += ' (' + (f.from?app.fmtDateDisplay(f.from):'শুরু থেকে') + ' — ' + (f.to?app.fmtDateDisplay(f.to):'এখন পর্যন্ত') + ')';
+    app.renderInvoiceDoc(list, label, true);
+    app.switchTab('reports');
+    setTimeout(()=>window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}), 150);
+  },
+
+  // ---------- customer directory + ledger ----------
+  renderCustomerDirectory(){
+    const box = document.getElementById('custResult');
+    const groups = {};
+    app.state.records.forEach(r=>{
+      const n = (r.customer||'').trim();
+      if(!n) return;
+      if(!groups[n]) groups[n]=[];
+      groups[n].push(r);
+    });
+    const keys = Object.keys(groups).sort((a,b)=>a.localeCompare(b,'bn'));
+    if(keys.length===0){
+      box.innerHTML = `<div class="empty"><div class="big">👤</div>এখনো কোনো কাস্টমার/সাপ্লায়ারের নাম যুক্ত হয়নি</div>`;
+      return;
+    }
+    box.innerHTML = `<p class="muted" style="margin-bottom:10px;">মোট ${keys.length} জন — যেকোনো নামে ক্লিক করে সম্পূর্ণ হিসাব ও ইনভয়েস দেখুন</p>
+      <div class="grid grid-3">` + keys.map(n=>{
+        const s = app.summarize(groups[n]);
+        const due = s.dueReceivable + s.duePayable;
+        return `<div class="card" style="cursor:pointer;" onclick="app.openCustomerLedger('${n.replace(/'/g,"\\'")}')">
+          <div style="font-weight:700; font-family:'Tiro Bangla',serif; font-size:16px;">${n}</div>
+          <div class="muted" style="margin-top:6px; font-size:12.5px;">লেনদেন: ${groups[n].length} টি</div>
+          <div class="flexRow" style="margin-top:8px;">
+            <span class="muted" style="font-size:12.5px;">মোট বাকি</span>
+            ${due>0
+              ? `<span class="num" style="font-weight:700; color:var(--rust);">৳${app.fmtMoney(due)}</span>`
+              : `<span style="font-weight:700; color:#2E7D46;">✔ পরিশোধ সম্পন্ন</span>`}
+          </div>
+        </div>`;
+      }).join('') + `</div>`;
+  },
+  clearCustomerSearch(){
+    document.getElementById('cust-search').value='';
+    app.renderCustomerDirectory();
+  },
+  openCustomerLedger(name){
+    document.getElementById('cust-search').value = name;
+    app.searchCustomer(true);
+  },
+  searchCustomer(exact){
+    const raw = document.getElementById('cust-search').value.trim();
+    const q = raw.toLowerCase();
+    const box = document.getElementById('custResult');
+    if(!q){ app.renderCustomerDirectory(); return; }
+    const list = app.state.records.filter(r=> exact ? (r.customer||'').trim()===raw : (r.customer||'').toLowerCase().includes(q))
+      .sort((a,b)=>b.date.localeCompare(a.date));
+    if(list.length===0){
+      box.innerHTML = `<div class="empty"><div class="big">🔍</div>"${raw}" নামে কোনো হিস্ট্রি পাওয়া যায়নি</div>`;
+      return;
+    }
+    const s = app.summarize(list);
+    const totalDue = s.dueReceivable + s.duePayable;
+    box.innerHTML = `
+      <div class="flexRow noPrint" style="margin-bottom:10px;">
+        <button class="btn btn-ghost btn-sm" onclick="app.clearCustomerSearch()">← সকল কাস্টমার তালিকায় ফিরুন</button>
+      </div>
+      <h3 style="margin:0 0 12px; font-family:'Tiro Bangla',serif;">${raw} — এর সম্পূর্ণ হিসাব</h3>
+      <div class="grid grid-4" style="margin-bottom:14px;">
+        <div class="card stat river"><div class="lbl">মোট ক্রয় (তার কাছ থেকে)</div><div class="val num">৳${app.fmtMoney(s.buy)}</div></div>
+        <div class="card stat gold"><div class="lbl">মোট বিক্রয় (তার কাছে)</div><div class="val num">৳${app.fmtMoney(s.sell)}</div></div>
+        <div class="card stat ink"><div class="lbl">মোট জমা</div><div class="val num">৳${app.fmtMoney(s.paidIn+s.paidOut)}</div></div>
+        <div class="card stat rust"><div class="lbl">মোট বাকি</div>${totalDue>0 ? `<div class="val num">৳${app.fmtMoney(totalDue)}</div>` : `<div class="val" style="color:#2E7D46;">✔ পরিশোধ সম্পন্ন</div>`}</div>
+      </div>
+      <div class="rowGap noPrint" style="margin-bottom:14px;">
+        ${s.dueReceivable>0 ? `<button class="btn btn-primary btn-sm" onclick="app.openSettleForCustomer('${raw.replace(/'/g,"\\'")}','due-in')">✔ বাকি আদায় যুক্ত করুন (৳${app.fmtMoney(s.dueReceivable)})</button>` : ''}
+        ${s.duePayable>0 ? `<button class="btn btn-primary btn-sm" onclick="app.openSettleForCustomer('${raw.replace(/'/g,"\\'")}','due-out')">✔ বাকি পরিশোধ যুক্ত করুন (৳${app.fmtMoney(s.duePayable)})</button>` : ''}
+      </div>
+      <div class="flexRow" style="margin-bottom:8px;">
+        <span class="muted">${list.length} টি লেনদেন পাওয়া গেছে (সম্পূর্ণ বিস্তারিতসহ)</span>
+        <button class="btn btn-outline btn-sm noPrint" onclick="app.printCustomerHistory()">🖨️ প্রিন্ট / পিডিএফ</button>
+      </div>
+      <div class="tableWrap"><table id="custTable">${app.buildTableHTML(list, true, true)}</table></div>
+    `;
+    app._custList = list;
+    app._custName = raw;
+  },
+  openSettleForCustomer(name, type){
+    app.switchTab('entry');
+    app.resetForm();
+    app.setEntryType(type);
+    document.getElementById('f-customer').value = name;
+    document.getElementById('f-date').value = app.todayISO();
+    setTimeout(()=>document.getElementById('f-amount').focus(), 100);
+  },
+  printCustomerHistory(){
+    const list = app._custList||[];
+    if(list.length===0){ app.toast('আগে একজন কাস্টমার নির্বাচন করুন'); return; }
+    app.renderInvoiceDoc(list, (app._custName||'কাস্টমার') + ' — সম্পূর্ণ হিসাব ও ইনভয়েস', true);
+    app.switchTab('reports');
+    setTimeout(()=>window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}), 150);
+  },
+
+  // ---------- reports ----------
+  applyPreset(p){
+    document.querySelectorAll('#presetRow button').forEach(b=>b.classList.toggle('on', b.dataset.p===p));
+    const today = new Date();
+    let from, to, label;
+    const iso = d=>d.toISOString().slice(0,10);
+    if(p==='today'){ from=to=iso(today); label='আজকের রিপোর্ট ('+app.fmtDateDisplay(iso(today))+')'; }
+    else if(p==='week'){
+      const day = today.getDay(); // 0 sun
+      const diffToSat = (day+1)%7; // days since last Saturday
+      const start = new Date(today); start.setDate(today.getDate()-diffToSat);
+      const end = new Date(start); end.setDate(start.getDate()+6);
+      from=iso(start); to=iso(end);
+      label = 'সাপ্তাহিক রিপোর্ট ('+app.fmtDateDisplay(from)+' — '+app.fmtDateDisplay(to)+')';
+    } else if(p==='month'){
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      const end = new Date(today.getFullYear(), today.getMonth()+1, 0);
+      from=iso(start); to=iso(end);
+      label = 'মাসিক রিপোর্ট ('+app.fmtDateDisplay(from)+' — '+app.fmtDateDisplay(to)+')';
+    } else if(p==='year'){
+      const start = new Date(today.getFullYear(),0,1);
+      const end = new Date(today.getFullYear(),11,31);
+      from=iso(start); to=iso(end);
+      label = 'বার্ষিক রিপোর্ট ('+today.getFullYear()+')';
+    } else {
+      from = document.getElementById('rep-from').value || iso(today);
+      to = document.getElementById('rep-to').value || iso(today);
+      label = 'কাস্টম রিপোর্ট ('+app.fmtDateDisplay(from)+' — '+app.fmtDateDisplay(to)+')';
+    }
+    document.getElementById('rep-from').value = from;
+    document.getElementById('rep-to').value = to;
+    app.state.reportRange = {from,to,label};
+    if(p!=='custom') app.buildReport();
+  },
+  buildReport(){
+    const from = document.getElementById('rep-from').value;
+    const to = document.getElementById('rep-to').value;
+    const activePreset = document.querySelector('#presetRow button.on');
+    let baseLabel;
+    if(!activePreset || activePreset.dataset.p==='custom'){
+      baseLabel = 'কাস্টম রিপোর্ট ('+app.fmtDateDisplay(from)+' — '+app.fmtDateDisplay(to)+')';
+    } else {
+      baseLabel = app.state.reportRange.baseLabel || app.state.reportRange.label;
+    }
+    const repType = document.getElementById('rep-type').value;
+    const typeLabels = {all:'', buy:' — ক্রয়ের হিসাব', sell:' — বিক্রয়ের হিসাব', expense:' — খরচের হিসাব', settle:' — বাকি আদায়/পরিশোধ'};
+    const label = baseLabel + (typeLabels[repType]||'');
+    app.state.reportRange = {from,to,label,baseLabel};
+    const list = app.state.records.filter(r=>{
+      if(!((!from||r.date>=from) && (!to||r.date<=to))) return false;
+      if(repType==='settle') return (r.type==='due-in'||r.type==='due-out');
+      if(repType!=='all') return r.type===repType;
+      return true;
+    }).sort((a,b)=>a.date.localeCompare(b.date));
+    app.renderInvoiceDoc(list, label);
+  },
+  renderInvoiceDoc(list, label, withNotes){
+    const s = app.summarize(list);
+    const st = app.state.settings;
+    const html = `
+      <div class="invoiceDoc" id="invoiceDoc">
+        <div class="invoiceHead">
+          <div>
+            <h3>${st.name || 'বালুর ব্যবসা হিসাব'}</h3>
+            <div class="muted">${st.phone?('📞 '+st.phone):''} ${st.address?(' · '+st.address):''}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; font-family:'Tiro Bangla',serif; font-size:16px;">${label}</div>
+            <div class="muted">তৈরির তারিখ: ${app.fmtDateDisplay(app.todayISO())}</div>
+          </div>
+        </div>
+        <div class="tableWrap"><table>${app.buildTableHTML(list, false, withNotes)}</table></div>
+        <div class="invoiceTotals">
+          <div><div class="lbl">মোট ক্রয়</div><div class="val num">৳${app.fmtMoney(s.buy)}</div></div>
+          <div><div class="lbl">মোট বিক্রয়</div><div class="val num">৳${app.fmtMoney(s.sell)}</div></div>
+          <div><div class="lbl">মোট খরচ</div><div class="val num">৳${app.fmtMoney(s.expense)}</div></div>
+          <div><div class="lbl">নিট লাভ</div><div class="val num">৳${app.fmtMoney(s.profit)}</div></div>
+          <div><div class="lbl">মোট জমা (আদায়)</div><div class="val num">৳${app.fmtMoney(s.paidIn)}</div></div>
+          <div><div class="lbl">মোট জমা (পরিশোধ)</div><div class="val num">৳${app.fmtMoney(s.paidOut)}</div></div>
+          <div><div class="lbl">কাস্টমারের বাকি</div><div class="val num">৳${app.fmtMoney(s.dueReceivable)}</div></div>
+          <div><div class="lbl">সাপ্লায়ারের বাকি</div><div class="val num">৳${app.fmtMoney(s.duePayable)}</div></div>
+        </div>
+      </div>
+      <div class="rowGap noPrint" style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="window.print()">🖨️ প্রিন্ট করুন</button>
+        <button class="btn btn-outline" onclick="app.downloadPDF()">⬇ পিডিএফ ডাউনলোড</button>
+      </div>
+    `;
+    document.getElementById('invoicePreview').innerHTML = html;
+  },
+  async downloadPDF(){
+    const el = document.getElementById('invoiceDoc');
+    if(!el){ app.toast('আগে রিপোর্ট তৈরি করুন'); return; }
+    app.toast('পিডিএফ তৈরি হচ্ছে...');
+    try{
+      const canvas = await html2canvas(el, {scale:2, backgroundColor:'#ffffff'});
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p','pt','a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = pageWidth - 40;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 20;
+      pdf.addImage(imgData,'PNG',20,position,imgWidth,imgHeight);
+      heightLeft -= (pdf.internal.pageSize.getHeight()-40);
+      while(heightLeft > 0){
+        position = heightLeft - imgHeight + 20;
+        pdf.addPage();
+        pdf.addImage(imgData,'PNG',20,position,imgWidth,imgHeight);
+        heightLeft -= (pdf.internal.pageSize.getHeight()-40);
+      }
+      pdf.save('মদিনা-এন্টারপ্রাইজ-রিপোর্ট.pdf');
+      app.toast('পিডিএফ ডাউনলোড হয়েছে');
+    }catch(e){
+      app.toast('পিডিএফ তৈরিতে সমস্যা হয়েছে, প্রিন্ট অপশন ব্যবহার করুন');
+    }
+  },
+
+  // ---------- backup ----------
+  exportBackup(){
+    const data = JSON.stringify({records:app.state.records, settings:app.state.settings}, null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'madina-enterprise-backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  renderAll(){
+    app.renderDashboard();
+    app.applyTxFilter();
+    if(document.getElementById('tab-customers').classList.contains('active') && !document.getElementById('cust-search').value.trim()){
+      app.renderCustomerDirectory();
+    }
   }
 };
 
-// Ensure DOM is fully loaded
-document.addEventListener('DOMContentLoaded', ()=>{
-  app.init();
-});
+document.addEventListener('DOMContentLoaded', app.init);
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
