@@ -17,6 +17,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
@@ -104,16 +105,6 @@
     font-family:'Hind Siliguri',sans-serif; font-size:14.5px; background:#FFFDF8; color:var(--ink);
   }
   input:focus, select:focus, textarea:focus{outline:none; border-color:var(--gold);}
-  .typeToggle{display:flex; gap:8px; margin-bottom:16px;}
-  .typeToggle button{
-    flex:1; padding:11px; border-radius:10px; border:2px solid var(--line); background:#fff;
-    font-family:'Hind Siliguri',sans-serif; font-weight:700; font-size:14.5px; cursor:pointer; color:var(--ink-soft);
-  }
-  .typeToggle button.on.buy{border-color:var(--river); color:var(--river); background:var(--river-soft);}
-  .typeToggle button.on.sell{border-color:var(--gold-deep); color:var(--gold-deep); background:var(--gold-soft);}
-  .typeToggle button.on.expense{border-color:var(--rust); color:var(--rust); background:var(--rust-soft);}
-  .typeToggle button.on.duein{border-color:#2E7D46; color:#2E7D46; background:#E4F3E8;}
-  .typeToggle button.on.dueout{border-color:#8A5A2B; color:#8A5A2B; background:#F3E7D6;}
   .btn{
     display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:none; border-radius:9px;
     padding:10px 18px; font-family:'Hind Siliguri',sans-serif; font-weight:700; font-size:14px;
@@ -122,56 +113,6 @@
   .btn-primary:hover{background:#463A30;}
   .btn-outline{background:#fff; border:1.5px solid var(--line); color:var(--ink);}
   .btn-outline:hover{border-color:var(--gold);}
-  .btn-ghost{background:transparent; color:var(--ink-soft); padding:8px 10px;}
-  .btn-danger{color:var(--rust);}
-  .btn-sm{padding:6px 10px; font-size:12.5px; border-radius:7px;}
-  table{width:100%; border-collapse:collapse; font-size:13.5px;}
-  thead th{
-    text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft);
-    padding:9px 8px; border-bottom:2px solid var(--line); white-space:nowrap;
-  }
-  tbody td{padding:9px 8px; border-bottom:1px solid var(--line); white-space:nowrap;}
-  tbody tr:hover{background:var(--sand-bg-alt);}
-  .badge{display:inline-block; padding:3px 9px; border-radius:20px; font-size:11.5px; font-weight:700;}
-  .badge.buy{background:var(--river-soft); color:var(--river);}
-  .badge.sell{background:var(--gold-soft); color:var(--gold-deep);}
-  .badge.expense{background:var(--rust-soft); color:var(--rust);}
-  .badge.due-in{background:#E4F3E8; color:#2E7D46;}
-  .badge.due-out{background:#F3E7D6; color:#8A5A2B;}
-  .tableWrap{overflow-x:auto; margin-top:14px;}
-  .filterBar{display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:6px;}
-  .filterBar > div{min-width:130px;}
-  .presetRow{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
-  .presetRow button{
-    padding:8px 14px; border-radius:20px; border:1.5px solid var(--line); background:#fff; cursor:pointer;
-    font-family:'Hind Siliguri',sans-serif; font-weight:600; font-size:13px; color:var(--ink-soft);
-  }
-  .presetRow button.on{border-color:var(--gold); color:var(--gold-deep); background:var(--gold-soft);}
-  .empty{text-align:center; padding:40px 10px; color:var(--ink-soft);}
-  .empty .big{font-size:34px; margin-bottom:6px;}
-  .stockBar{height:12px; border-radius:8px; background:var(--sand-bg-alt); overflow:hidden; margin-top:8px; display:flex;}
-  .stockBar .in{background:linear-gradient(90deg, var(--river), #5C8F72);}
-  .stockBar .out{background:linear-gradient(90deg, var(--gold), var(--gold-deep));}
-  .flexRow{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
-  .muted{color:var(--ink-soft); font-size:13px;}
-  .toast{
-    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
-    background:var(--ink); color:#F5EEDD; padding:11px 20px; border-radius:30px; font-size:13.5px;
-    box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:.25s; z-index:999;
-  }
-  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
-  #invoicePreview{margin-top:20px;}
-  .invoiceDoc{background:#fff; border:1px solid var(--line); border-radius:10px; padding:26px;}
-  .invoiceDoc h3{font-family:'Tiro Bangla',serif; font-size:22px; margin:0;}
-  .invoiceHead{display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid var(--ink); padding-bottom:12px; margin-bottom:16px;}
-  .invoiceTotals{margin-top:14px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
-  @media(max-width:700px){.invoiceTotals{grid-template-columns:repeat(2,1fr);}}
-  .invoiceTotals div{background:var(--sand-bg-alt); border-radius:8px; padding:10px 12px;}
-  .invoiceTotals .lbl{font-size:11.5px; color:var(--ink-soft); font-weight:700;}
-  .invoiceTotals .val{font-size:16px; font-weight:700; margin-top:3px;}
-  .modalBg{position:fixed; inset:0; background:rgba(43,36,32,.45); display:none; align-items:center; justify-content:center; z-index:900; padding:16px;}
-  .modalBg.show{display:flex;}
-  .modalCard{background:#fff; border-radius:14px; padding:22px; max-width:420px; width:100%;}
   .rowGap{display:flex; gap:10px; flex-wrap:wrap;}
 
   /* AUTH STYLES */
@@ -196,7 +137,7 @@
   }
   .authTabs button.on{background:#fff; color:var(--ink); box-shadow:var(--shadow);}
   .authForm{display:none; flex-direction:column; gap:13px;}
-  .authForm.on{display:flex;}
+  .authForm.on{display:flex !important;}
   .pwdWrap{position:relative;}
   .pwdWrap input{padding-right:40px;}
   .pwdToggle{
@@ -204,7 +145,7 @@
     cursor:pointer; font-size:16px; padding:6px; color:var(--ink-soft);
   }
   .authErr, .authMsg{
-    display:none; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600;
+    display:none; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; margin-bottom: 10px;
   }
   .authErr{background:var(--rust-soft); color:var(--rust);}
   .authMsg{background:var(--river-soft); color:var(--river);}
@@ -216,16 +157,11 @@
     background:rgba(255,255,255,.08); border:1.5px solid rgba(255,255,255,.2); color:#F5EEDD;
     border-radius:8px; padding:7px 12px; font-family:'Hind Siliguri',sans-serif; font-weight:600; font-size:12.5px; cursor:pointer;
   }
-  @media print{
-    body *{visibility:hidden;}
-    #invoicePreview, #invoicePreview *{visibility:visible;}
-    #invoicePreview{position:absolute; left:0; top:0; width:100%; margin:0;}
-    .noPrint{display:none !important;}
-  }
 </style>
 </head>
 <body>
 
+<!-- AUTH SCREEN -->
 <div id="authScreen">
   <div class="authCard">
     <div class="authBrand">
@@ -237,13 +173,14 @@
     </div>
 
     <div class="authTabs" id="authTabs">
-      <button type="button" data-authtab="login" class="on">লগইন</button>
-      <button type="button" data-authtab="register">রেজিস্ট্রেশন</button>
+      <button type="button" id="tabBtnLogin" data-authtab="login" class="on">লগইন</button>
+      <button type="button" id="tabBtnRegister" data-authtab="register">রেজিস্ট্রেশন</button>
     </div>
 
     <div class="authErr" id="authErr"></div>
     <div class="authMsg" id="authMsg"></div>
 
+    <!-- LOGIN FORM -->
     <form class="authForm on" id="loginForm">
       <div>
         <label>ইমেইল বা মোবাইল নাম্বার</label>
@@ -262,6 +199,7 @@
       <button type="submit" class="btn btn-primary" style="justify-content:center;" id="loginBtn">প্রবেশ করুন</button>
     </form>
 
+    <!-- REGISTER FORM -->
     <form class="authForm" id="registerForm">
       <div>
         <label>ইমেইল বা মোবাইল নাম্বার</label>
@@ -284,8 +222,182 @@
       <button type="submit" class="btn btn-primary" style="justify-content:center;" id="registerBtn">একাউন্ট তৈরি করুন</button>
     </form>
 
+    <!-- RESET PASSWORD FORM -->
     <form class="authForm" id="resetForm">
-      <p class="muted" style="margin:0;">আপনার একাউন্টের ইমেইলটি লিখুন — পাসওয়ার্ড রিসেট করার লিংক পাঠিয়ে দেওয়া হবে।</p>
+      <p style="margin:0 0 10px; font-size:13px; color:var(--ink-soft);">আপনার একাউন্টের ইমেইলটি লিখুন — পাসওয়ার্ড রিসেট করার লিংক পাঠিয়ে দেওয়া হবে।</p>
       <div>
         <label>ইমেইল</label>
         <input type="email" id="rs-email" placeholder="আপনার ইমেইল লিখুন" required autocomplete="username">
+      </div>
+      <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:10px;" id="resetBtn">রিসেট লিংক পাঠান</button>
+      <button type="button" class="authLink" id="backToLoginBtn" style="margin-top:12px; text-align:center;">← লগইনে ফিরে যান</button>
+    </form>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appRoot" class="hide">
+  <header class="top">
+    <div class="brandRow">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>
+          <h1 id="brandName">মদিনা এন্টারপ্রাইজ</h1>
+          <p id="brandSub">ক্রয় • বিক্রয় • খরচ • লাভ-ক্ষতি</p>
+        </div>
+      </div>
+      <div class="userChip">
+        <span class="who" id="whoLabel"></span>
+        <button class="logoutBtn" id="logoutBtn" onclick="app.logout()">লগআউট</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>স্বাগতম! আপনি সফলভাবে লগইন করেছেন।</h2>
+    </div>
+  </main>
+</div>
+
+<script>
+// =====================================================================
+// Firebase Config
+// =====================================================================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase if config is present
+if(firebaseConfig.apiKey !== "YOUR_API_KEY") {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const app = {
+  currentUser: null,
+
+  init(){
+    this.bindAuthUI();
+    
+    if(typeof firebase !== 'undefined' && firebase.auth){
+      firebase.auth().onAuthStateChanged((user)=>{
+        if(user){
+          app.currentUser = user;
+          document.getElementById('authScreen').classList.add('hide');
+          document.getElementById('appRoot').classList.remove('hide');
+          document.getElementById('whoLabel').textContent = user.email || user.phoneNumber || '';
+        } else {
+          app.currentUser = null;
+          document.getElementById('appRoot').classList.add('hide');
+          document.getElementById('authScreen').classList.remove('hide');
+        }
+      });
+    }
+  },
+
+  bindAuthUI(){
+    document.getElementById('tabBtnLogin').addEventListener('click', ()=>app.switchAuthTab('login'));
+    document.getElementById('tabBtnRegister').addEventListener('click', ()=>app.switchAuthTab('register'));
+
+    document.querySelectorAll('.pwdToggle').forEach(b=>{
+      b.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const inp = document.getElementById(b.dataset.toggle);
+        const show = inp.type === 'password';
+        inp.type = show ? 'text' : 'password';
+        b.textContent = show ? '🙈' : '👁';
+      });
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', app.handleLogin);
+    document.getElementById('registerForm').addEventListener('submit', app.handleRegister);
+    document.getElementById('resetForm').addEventListener('submit', app.handleReset);
+    document.getElementById('forgotBtn').addEventListener('click', ()=>app.switchAuthTab('reset'));
+    document.getElementById('backToLoginBtn').addEventListener('click', ()=>app.switchAuthTab('login'));
+  },
+
+  switchAuthTab(tab){
+    app.clearAuthMsgs();
+    document.querySelectorAll('.authForm').forEach(f=>f.classList.remove('on'));
+    
+    if(tab === 'login') {
+      document.getElementById('loginForm').classList.add('on');
+    } else if(tab === 'register') {
+      document.getElementById('registerForm').classList.add('on');
+    } else if(tab === 'reset') {
+      document.getElementById('resetForm').classList.add('on');
+    }
+
+    document.querySelectorAll('#authTabs button').forEach(b=>{
+      b.classList.toggle('on', b.dataset.authtab === tab);
+    });
+    
+    document.getElementById('authTabs').style.display = (tab === 'reset') ? 'none' : 'flex';
+  },
+
+  showAuthErr(msg){
+    const e = document.getElementById('authErr'); e.textContent = msg; e.classList.add('show');
+  },
+  showAuthMsg(msg){
+    const m = document.getElementById('authMsg'); m.textContent = msg; m.classList.add('show');
+  },
+  clearAuthMsgs(){
+    document.getElementById('authErr').classList.remove('show');
+    document.getElementById('authMsg').classList.remove('show');
+  },
+
+  formatEmail(id){
+    if(!id.includes('@')) return id + "@madina.com";
+    return id;
+  },
+
+  async handleLogin(e){
+    e.preventDefault(); app.clearAuthMsgs();
+    const id = document.getElementById('li-id').value.trim();
+    const pass = document.getElementById('li-pass').value;
+    try{
+      await firebase.auth().signInWithEmailAndPassword(app.formatEmail(id), pass);
+    }catch(err){ app.showAuthErr("ইমেইল/মোবাইল বা পাসওয়ার্ড ভুল হয়েছে"); }
+  },
+
+  async handleRegister(e){
+    e.preventDefault(); app.clearAuthMsgs();
+    const id = document.getElementById('re-id').value.trim();
+    const pass = document.getElementById('re-pass').value;
+    const pass2 = document.getElementById('re-pass2').value;
+
+    if(pass !== pass2){
+      app.showAuthErr("দুই পাসওয়ার্ড এক নয়!"); return;
+    }
+    try{
+      await firebase.auth().createUserWithEmailAndPassword(app.formatEmail(id), pass);
+      app.showAuthMsg("একাউন্ট সফলভাবে তৈরি হয়েছে!");
+    }catch(err){ app.showAuthErr(err.message); }
+  },
+
+  async handleReset(e){
+    e.preventDefault(); app.clearAuthMsgs();
+    const email = document.getElementById('rs-email').value.trim();
+    try{
+      await firebase.auth().sendPasswordResetEmail(email);
+      app.showAuthMsg("আপনার ইমেইলে পাসওয়ার্ড রিসেট লিংক পাঠানো হয়েছে।");
+    }catch(err){ app.showAuthErr("ইমেইলটি সঠিক নয় বা পাওয়া যায়নি।"); }
+  },
+
+  logout(){ 
+    if(firebase.auth()) firebase.auth().signOut(); 
+  }
+};
+
+// Ensure DOM is fully loaded
+document.addEventListener('DOMContentLoaded', ()=>{
+  app.init();
+});
+</script>
+</body>
+</html>
