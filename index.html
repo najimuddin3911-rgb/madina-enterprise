@@ -397,7 +397,7 @@
           <div class="fld-goods"><label>গাড়ির নং</label><input type="text" id="f-vehicle" placeholder="যেমনঃ ১২.২৭"></div>
           <div class="fld-party" id="fld-customer-wrap"><label id="lbl-customer">কাস্টমার / সাপ্লায়ারের নাম</label><input type="text" id="f-customer" placeholder="নাম লিখুন"></div>
           <div class="fld-item"><label id="lbl-item">মালামাল / বিবরণ</label><input type="text" id="f-item" placeholder="যেমনঃ ২০ এমএম / এল.সি"></div>
-          <div class="fld-goods"><label>ফুট</label><input type="number" step="0.01" id="f-feet" placeholder="০.০০"></div>
+          <div class="fld-goods"><label>ফুট</label><input type="number" step="0.0001" id="f-feet" placeholder="০.০০০০"></div>
           <div class="fld-goods"><label>দর (প্রতি ফুট)</label><input type="number" step="0.01" id="f-rate" placeholder="০.০০"></div>
           <div><label id="lbl-amount">টাকা (মোট) *</label><input type="number" step="0.01" id="f-amount" required placeholder="০.০০"></div>
           <div class="fld-paid"><label id="lbl-paid">জমা</label><input type="number" step="0.01" id="f-paid" value="0"></div>
@@ -832,9 +832,10 @@ const app = {
   },
 
   // ---------- helpers ----------
-  todayISO(){ const d=new Date(); return d.toISOString().slice(0,10); },
+  todayISO(){ const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; },
   uid(){ return 'r'+Date.now()+Math.random().toString(16).slice(2,8); },
   fmtMoney(n){ n = Number(n)||0; return n.toLocaleString('en-US',{maximumFractionDigits:2}); },
+  fmtFeet(n){ n = Number(n)||0; return n.toLocaleString('en-US',{maximumFractionDigits:4}); },
   fmtDateDisplay(iso){
     if(!iso) return '-';
     const [y,m,d] = iso.split('-');
@@ -1001,7 +1002,7 @@ const app = {
       {lbl:'কাস্টমারের কাছে পাওনা (বাকি)', val:'৳ '+app.fmtMoney(s.dueReceivable), cls:'gold'},
       {lbl:'সাপ্লায়ারকে দেনা (বাকি)', val:'৳ '+app.fmtMoney(s.duePayable), cls:'river'},
       {lbl:'মোট এন্ট্রি', val:app.state.records.length, cls:'ink'},
-      {lbl:'স্টকে ফুট', val:app.fmtMoney(s.stock), cls:'rust'},
+      {lbl:'স্টকে ফুট', val:app.fmtFeet(s.stock), cls:'rust'},
     ];
     document.getElementById('dashStats').innerHTML = cards.map(c=>`
       <div class="card stat ${c.cls}"><div class="lbl">${c.lbl}</div><div class="val num">${c.val}</div></div>
@@ -1010,7 +1011,7 @@ const app = {
     const total = (s.feetBought+s.feetSold)||1;
     document.getElementById('stockInBar').style.width = (s.feetBought/total*100)+'%';
     document.getElementById('stockOutBar').style.width = (s.feetSold/total*100)+'%';
-    document.getElementById('stockText').textContent = `ক্রয়: ${app.fmtMoney(s.feetBought)} ফুট · বিক্রয়: ${app.fmtMoney(s.feetSold)} ফুট`;
+    document.getElementById('stockText').textContent = `ক্রয়: ${app.fmtFeet(s.feetBought)} ফুট · বিক্রয়: ${app.fmtFeet(s.feetSold)} ফুট`;
 
     const recent = [...app.state.records].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
     document.getElementById('recentTable').innerHTML = app.buildTableHTML(recent, false);
@@ -1033,7 +1034,7 @@ const app = {
         <td>${r.vehicleNo||'-'}</td>
         <td>${r.customer||'-'}</td>
         <td>${r.item||'-'}</td>
-        <td class="num">${r.feet?app.fmtMoney(r.feet):'-'}</td>
+        <td class="num">${r.feet?app.fmtFeet(r.feet):'-'}</td>
         <td class="num">${r.rate?app.fmtMoney(r.rate):'-'}</td>
         <td class="num">${app.fmtMoney(r.amount)}</td>
         <td class="num">${app.fmtMoney(r.paid)}</td>
