@@ -483,6 +483,7 @@
             <option value="settle">শুধু বাকি আদায়/পরিশোধ</option>
           </select>
         </div>
+        <div style="min-width:180px;"><label>নাম দিয়ে খুঁজুন</label><input type="text" id="rep-q" placeholder="কাস্টমার/সাপ্লায়ারের নাম"></div>
         <div><label>শুরুর তারিখ</label><input type="date" id="rep-from"></div>
         <div><label>শেষ তারিখ</label><input type="date" id="rep-to"></div>
         <div><button class="btn btn-primary" onclick="app.buildReport()">রিপোর্ট তৈরি করুন</button></div>
@@ -1018,16 +1019,17 @@ const app = {
   },
 
   // ---------- transactions table ----------
-  buildTableHTML(list, withActions, withNotes){
+  buildTableHTML(list, withActions, withNotes, withSL){
     if(list.length===0){
       return `<tbody><tr><td colspan="12"><div class="empty"><div class="big">📋</div>কোনো এন্ট্রি পাওয়া যায়নি</div></td></tr></tbody>`;
     }
     const head = `<thead><tr>
-      <th>তারিখ</th><th>ধরন</th><th>চালান নং</th><th>গাড়ির নং</th><th>নাম</th><th>মালামাল</th>
+      ${withSL?'<th>ক্রঃনং</th>':''}<th>তারিখ</th><th>ধরন</th><th>চালান নং</th><th>গাড়ির নং</th><th>নাম</th><th>মালামাল</th>
       <th>ফুট</th><th>দর</th><th>টাকা</th><th>জমা</th><th>বাকি</th>${withNotes?'<th>নোট</th>':''}${withActions?'<th></th>':''}
     </tr></thead>`;
-    const rows = list.map(r=>`
+    const rows = list.map((r,i)=>`
       <tr>
+        ${withSL?`<td>${i+1}</td>`:''}
         <td>${app.fmtDateDisplay(r.date)}</td>
         <td><span class="badge ${r.type}">${app.typeLabel(r.type)}</span></td>
         <td>${r.invoiceNo||'-'}</td>
@@ -1229,6 +1231,7 @@ const app = {
   buildReport(){
     const from = document.getElementById('rep-from').value;
     const to = document.getElementById('rep-to').value;
+    const q = document.getElementById('rep-q').value.trim().toLowerCase();
     const activePreset = document.querySelector('#presetRow button.on');
     let baseLabel;
     if(!activePreset || activePreset.dataset.p==='custom'){
@@ -1238,12 +1241,14 @@ const app = {
     }
     const repType = document.getElementById('rep-type').value;
     const typeLabels = {all:'', buy:' — ক্রয়ের হিসাব', sell:' — বিক্রয়ের হিসাব', expense:' — খরচের হিসাব', settle:' — বাকি আদায়/পরিশোধ'};
-    const label = baseLabel + (typeLabels[repType]||'');
+    let label = baseLabel + (typeLabels[repType]||'');
+    if(q) label += ' — নাম: ' + document.getElementById('rep-q').value.trim();
     app.state.reportRange = {from,to,label,baseLabel};
     const list = app.state.records.filter(r=>{
       if(!((!from||r.date>=from) && (!to||r.date<=to))) return false;
-      if(repType==='settle') return (r.type==='due-in'||r.type==='due-out');
-      if(repType!=='all') return r.type===repType;
+      if(repType==='settle'){ if(!(r.type==='due-in'||r.type==='due-out')) return false; }
+      else if(repType!=='all' && r.type!==repType) return false;
+      if(q && !(r.customer||'').toLowerCase().includes(q)) return false;
       return true;
     }).sort((a,b)=>a.date.localeCompare(b.date));
     app.renderInvoiceDoc(list, label);
@@ -1263,8 +1268,9 @@ const app = {
             <div class="muted">তৈরির তারিখ: ${app.fmtDateDisplay(app.todayISO())}</div>
           </div>
         </div>
-        <div class="tableWrap"><table>${app.buildTableHTML(list, false, withNotes)}</table></div>
+        <div class="tableWrap"><table>${app.buildTableHTML(list, false, withNotes, true)}</table></div>
         <div class="invoiceTotals">
+          <div><div class="lbl">মোট এন্ট্রি</div><div class="val num">${list.length}</div></div>
           <div><div class="lbl">মোট ক্রয়</div><div class="val num">৳${app.fmtMoney(s.buy)}</div></div>
           <div><div class="lbl">মোট বিক্রয়</div><div class="val num">৳${app.fmtMoney(s.sell)}</div></div>
           <div><div class="lbl">মোট খরচ</div><div class="val num">৳${app.fmtMoney(s.expense)}</div></div>
